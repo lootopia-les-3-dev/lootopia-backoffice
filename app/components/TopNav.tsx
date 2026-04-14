@@ -1,11 +1,9 @@
 import { Link, useRouteLoaderData } from "react-router"
 import type { rootLoader } from "~/loaders/rootloader"
-import { formatSSOUrl } from "~/utils/auth/formatSSOUrl"
 
 export const TopNav = () => {
   const loaderData = useRouteLoaderData<typeof rootLoader>("root")
-  const env = loaderData?.env
-  const user = loaderData?.user
+  const { user, signInUrl } = loaderData ?? {}
 
   return <nav className="flex justify-between text-shadow-mauve-900 dark:text-mauve-50 px-4 py-2 border-b border-mauve-400">
     <div>
@@ -20,7 +18,7 @@ export const TopNav = () => {
           {user.firstName.slice(0, 1).toLowerCase()}{user.lastName.slice(0, 1).toLowerCase()}
         </div>
           :
-          <a href={formatSSOUrl(env?.SSO_URL ?? "")}>
+          <a href={signInUrl ?? "#"}>
             sign in
           </a>
       }

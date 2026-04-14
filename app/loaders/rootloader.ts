@@ -2,9 +2,7 @@ import axios from "axios"
 import type { User } from "~/types/User"
 
 type RootLoaderData = {
-  env: {
-    SSO_URL?: string
-  }
+  signInUrl: string
   user: User | null
 }
 
@@ -21,9 +19,7 @@ export const rootLoader = async (c: Parameters<import("react-router").LoaderFunc
   })
 
 
-  const env = {
-    SSO_URL: process.env.SSO_URL,
-  }
+  const signInUrl = `${process.env.SSO_URL}/login?callbackUrl=${encodeURIComponent(url.href)}`
 
-  return { env, user } as RootLoaderData
+  return { signInUrl, user } as RootLoaderData
 }
