@@ -11,7 +11,7 @@ type RootLoaderData = {
 export const rootLoader = async (c: Parameters<import("react-router").LoaderFunction>[0]) => {
   const url = new URL(c.request.url)
 
-  const { data: user } = await axios.get(`${url.protocol}//${url.host}/sso/api/auth/me`, {
+  const { data: user } = await axios.get(`${process.env.SSO_URL}/api/auth/me`, {
     headers: {
       cookie: c.request.headers.get("cookie") || "",
     },
