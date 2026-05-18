@@ -1,7 +1,7 @@
 import { X } from "lucide-react"
 import { Link } from "react-router"
 
-export default function Hunt() {
+const Hunt = () => {
   return <>
     <div className="flex justify-between">
       <h2 className="font-bold text-2xl">Users</h2>
@@ -11,3 +11,5 @@ export default function Hunt() {
     </div>
   </>
 }
+
+export default Hunt

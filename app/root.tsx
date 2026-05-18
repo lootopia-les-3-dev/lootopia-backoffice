@@ -35,7 +35,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
         <Meta />
         <Links />
       </head>
-      <body className="h-screen flex flex-col bg-mauve-900">
+      <body className="h-screen flex flex-col bg-mauve-100 dark:bg-mauve-900">
         {children}
         <ScrollRestoration />
         <Scripts />

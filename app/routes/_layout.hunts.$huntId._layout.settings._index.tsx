@@ -4,7 +4,7 @@ import { Link } from "react-router"
 import Switch from "~/components/utils/Switch"
 import { UploadFile } from "~/components/utils/uploadFile"
 
-export default function Hunt() {
+const Hunt = () => {
   const [switch1, setSwitch1] = useState(false)
 
   return <div className="flex flex-col gap-8">
@@ -38,3 +38,5 @@ export default function Hunt() {
     </div>
   </div>
 }
+
+export default Hunt

@@ -1,10 +1,7 @@
 import { X } from "lucide-react"
-import { Link, useRouteLoaderData } from "react-router"
+import { Link } from "react-router"
 
-export default function Hunt() {
-  const k = useRouteLoaderData("root")
-
-  console.log(k)
+const Hunt = () => {
   return <>
     <div className="flex justify-between">
       <h2 className="font-bold text-2xl">Stats</h2>
@@ -14,3 +11,5 @@ export default function Hunt() {
     </div>
   </>
 }
+
+export default Hunt
