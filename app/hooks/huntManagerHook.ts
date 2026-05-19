@@ -103,7 +103,7 @@ export const useHuntManagerInternal = (slug: string): HuntManagerContextType => 
 
   useEffect(() => {
     const socket = io(socketUrl, {
-      path: "ws/hunts/socket.io",
+      path: "/ws/hunts/socket.io",
       transports: ["websocket"],
       withCredentials: true,
       query: { slug },
