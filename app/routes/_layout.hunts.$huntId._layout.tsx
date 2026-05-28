@@ -15,7 +15,7 @@ type LoaderData = {
 export const loader: LoaderFunction = async ({ params, request }): Promise<LoaderData> => {
   const { huntId } = params
 
-  const hunt = await axios.get<HuntLight[]>(`${process.env.API_URL}hunts/`, {
+  const hunt = await axios.get<HuntLight[]>(`${process.env.API_URL}hunts`, {
     headers: {
       cookie: request.headers.get("cookie") || "",
     },
