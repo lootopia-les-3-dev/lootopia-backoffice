@@ -71,7 +71,7 @@ export type FieldLock = {
 
 export type HuntLight = {
   createdAt: string
-  cover: string | null
+  coverKey: string | null
   id: string
   name: string
   slug: string

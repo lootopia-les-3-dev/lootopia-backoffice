@@ -100,7 +100,7 @@ const StepPanel = () => {
       {displayType !== "start" && (
         <>
           {(displayType === "text" || displayType === "image" || displayType === "text-with-image") && (
-            <ContentFields step={step} stepId={stepId} updateStep={updateStep} />
+            <ContentFields step={step} stepId={stepId} updateStep={updateStep} stepType={displayType} />
           )}
           {(displayType === "image" || displayType === "text-with-image") && (
             <MediaFields step={step} stepId={stepId} updateStep={updateStep} />
