@@ -3,7 +3,7 @@ import { useEffect, useState } from "react"
 import { Link, useLoaderData, useNavigate } from "react-router"
 import { ArFields } from "~/components/hunts/step/ArFields"
 import { ConditionsSection } from "~/components/hunts/step/ConditionsSection"
-import { ContentFields, MediaFields } from "~/components/hunts/step/ContentFields"
+import { ContentFields } from "~/components/hunts/step/ContentFields"
 import { FinalFields } from "~/components/hunts/step/FinalFields"
 import { GeoFields } from "~/components/hunts/step/GeoFields"
 import { NameField } from "~/components/hunts/step/NameField"
@@ -101,9 +101,6 @@ const StepPanel = () => {
         <>
           {(displayType === "text" || displayType === "image" || displayType === "text-with-image") && (
             <ContentFields step={step} stepId={stepId} updateStep={updateStep} stepType={displayType} />
-          )}
-          {(displayType === "image" || displayType === "text-with-image") && (
-            <MediaFields step={step} stepId={stepId} updateStep={updateStep} />
           )}
           {displayType === "qr-code" && <QrCodeFields step={step} stepId={stepId} updateStep={updateStep} />}
           {displayType === "wait-input" && <WaitInputFields step={step} stepId={stepId} updateStep={updateStep} />}

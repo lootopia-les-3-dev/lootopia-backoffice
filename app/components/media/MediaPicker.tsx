@@ -99,8 +99,9 @@ const TabPanel = ({ slug, onSelect }: TabPanelProps) => {
     e.target.value = ""
   }
 
-  const imageFiles = files.filter((f) => f.type === "file" && IMAGE_EXTS.test(f.relativePath))
-  const otherFiles = files.filter((f) => f.type === "file" && !IMAGE_EXTS.test(f.relativePath))
+  const VIDEO_EXTS = /\.(mp4|webm|ogg|mov|avi)$/i
+  const mediaFiles = files.filter((f) => f.type === "file" && (IMAGE_EXTS.test(f.relativePath) || VIDEO_EXTS.test(f.relativePath)))
+  const otherFiles = files.filter((f) => f.type === "file" && !IMAGE_EXTS.test(f.relativePath) && !VIDEO_EXTS.test(f.relativePath))
 
   return (
     <div className="flex flex-col gap-4 h-full">
@@ -124,30 +125,38 @@ const TabPanel = ({ slug, onSelect }: TabPanelProps) => {
       {/* Grid */}
       {loading ? (
         <div className="flex-1 flex items-center justify-center text-sm text-mauve-400">Chargement...</div>
-      ) : imageFiles.length === 0 && otherFiles.length === 0 ? (
+      ) : mediaFiles.length === 0 && otherFiles.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center gap-2 text-mauve-400">
           <FolderOpen size={32} />
           <span className="text-sm">Aucun fichier</span>
         </div>
       ) : (
         <div className="flex-1 overflow-y-auto">
-          {imageFiles.length > 0 && (
+          {mediaFiles.length > 0 && (
             <>
-              <Label className="mb-2 block">Images</Label>
+              <Label className="mb-2 block">Médias</Label>
               <div className="grid grid-cols-3 gap-2 mb-4">
-                {imageFiles.map((f) => (
+                {mediaFiles.map((f) => (
                   <button
                     key={f.key}
                     type="button"
                     onClick={() => onSelect(f.key)}
                     className="group relative aspect-square rounded-xl overflow-hidden bg-mauve-100 dark:bg-mauve-700 border-2 border-transparent hover:border-purple-500 transition-colors"
                   >
-                    <img
-                      src={`/api/files/${slug}/url?key=${encodeURIComponent(f.key)}`}
-                      alt={f.relativePath}
-                      className="w-full h-full object-cover"
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
-                    />
+                    {VIDEO_EXTS.test(f.relativePath) ? (
+                      <video
+                        src={`/api/files/${slug}/url?key=${encodeURIComponent(f.key)}`}
+                        className="w-full h-full object-cover"
+                        autoPlay muted loop playsInline disablePictureInPicture
+                      />
+                    ) : (
+                      <img
+                        src={`/api/files/${slug}/url?key=${encodeURIComponent(f.key)}`}
+                        alt={f.relativePath}
+                        className="w-full h-full object-cover"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
+                      />
+                    )}
                     <div className="absolute inset-x-0 bottom-0 p-1 bg-black/50 text-white text-[10px] truncate opacity-0 group-hover:opacity-100 transition-opacity">
                       {f.relativePath}
                     </div>

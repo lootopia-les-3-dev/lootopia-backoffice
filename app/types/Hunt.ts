@@ -80,4 +80,5 @@ export type HuntLight = {
   ownerType: "user" | "team"
   teamSlug: string | null
   teamRole: Role
+  createdBy: { firstName: string; lastName: string } | null
 }

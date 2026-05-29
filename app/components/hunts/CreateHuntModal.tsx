@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react"
 import { useNavigate, useRouteLoaderData } from "react-router"
 import { MediaPicker } from "~/components/media/MediaPicker"
 import { Label } from "~/components/ui/Label"
+import { MediaPreview } from "~/components/ui/MediaPreview"
 import { TextInput } from "~/components/ui/TextInput"
 import type { rootLoader } from "~/loaders/rootloader"
 import type { TeamLight } from "~/types/Team"
@@ -101,9 +102,8 @@ export const CreateHuntModal = ({ open, onClose, teams }: Props) => {
                 className="w-full h-32 rounded-xl border-2 border-dashed border-mauve-300 dark:border-mauve-600 flex flex-col items-center justify-center gap-2 hover:border-mauve-400 dark:hover:border-mauve-400 transition-colors overflow-hidden"
               >
                 {coverKey ? (
-                  <img
+                  <MediaPreview
                     src={`/api/files/user-${user?.id}/url?key=${encodeURIComponent(coverKey)}`}
-                    alt="cover"
                     className="w-full h-full object-cover"
                   />
                 ) : (

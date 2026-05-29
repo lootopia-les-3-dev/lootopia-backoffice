@@ -49,6 +49,8 @@ type FileItem = {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const IMAGE_EXTS = /\.(jpe?g|png|webp|gif|svg|avif)$/i
+const VIDEO_EXTS = /\.(mp4|webm|ogg|mov|avi)$/i
+const isMedia = (path: string) => IMAGE_EXTS.test(path) || VIDEO_EXTS.test(path)
 
 const formatSize = (bytes?: number) => {
   if (!bytes) return ""
@@ -95,16 +97,16 @@ const FileGrid = ({ scoopSlug, search, onUploadDone }: FileGridProps) => {
     }
   }
 
-  const imageFiles = files.filter(
-    (f) => f.type === "file" && IMAGE_EXTS.test(f.relativePath) &&
+  const mediaFiles = files.filter(
+    (f) => f.type === "file" && isMedia(f.relativePath) &&
       (!search || f.relativePath.toLowerCase().includes(search.toLowerCase()))
   )
   const otherFiles = files.filter(
-    (f) => f.type === "file" && !IMAGE_EXTS.test(f.relativePath) &&
+    (f) => f.type === "file" && !isMedia(f.relativePath) &&
       (!search || f.relativePath.toLowerCase().includes(search.toLowerCase()))
   )
 
-  const isEmpty = imageFiles.length === 0 && otherFiles.length === 0
+  const isEmpty = mediaFiles.length === 0 && otherFiles.length === 0
 
   return (
     <div className="flex flex-col gap-4">
@@ -131,19 +133,24 @@ const FileGrid = ({ scoopSlug, search, onUploadDone }: FileGridProps) => {
         </div>
       ) : (
         <>
-          {imageFiles.length > 0 && (
+          {mediaFiles.length > 0 && (
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
-              {imageFiles.map((f) => (
-                <div
-                  key={f.key}
-                  className="group relative aspect-square rounded-xl overflow-hidden bg-mauve-100 dark:bg-mauve-700"
-                >
-                  <img
-                    src={`/api/files/${scoopSlug}/url?key=${encodeURIComponent(f.key)}`}
-                    alt={f.relativePath}
-                    className="w-full h-full object-cover"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
-                  />
+              {mediaFiles.map((f) => (
+                <div key={f.key} className="group relative aspect-square rounded-xl overflow-hidden bg-mauve-100 dark:bg-mauve-700">
+                  {VIDEO_EXTS.test(f.relativePath) ? (
+                    <video
+                      src={`/api/files/${scoopSlug}/url?key=${encodeURIComponent(f.key)}`}
+                      className="w-full h-full object-cover"
+                      autoPlay muted loop playsInline disablePictureInPicture
+                    />
+                  ) : (
+                    <img
+                      src={`/api/files/${scoopSlug}/url?key=${encodeURIComponent(f.key)}`}
+                      alt={f.relativePath}
+                      className="w-full h-full object-cover"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
+                    />
+                  )}
                   <div className="absolute inset-x-0 bottom-0 p-1 bg-black/60 text-white text-[10px] truncate opacity-0 group-hover:opacity-100 transition-opacity">
                     {f.relativePath}
                   </div>

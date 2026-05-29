@@ -20,7 +20,7 @@ export const loader: LoaderFunction = async ({ params, request }): Promise<Loade
       cookie: request.headers.get("cookie") || "",
     },
   })
-    .then((res) => res.data.filter((hunt) => hunt.slug === huntId)[0])
+    .then((res) => res.data.filter((h) => h.slug === huntId)[0])
     .catch((res) => {
       console.error("Failed to fetch hunt", res)
       if (res.response?.status === 401) {
@@ -29,35 +29,34 @@ export const loader: LoaderFunction = async ({ params, request }): Promise<Loade
       return null
     })
 
-  return {
-    hunt,
-    slug: huntId || "",
-  }
+  return { hunt, slug: huntId || "" }
 }
 
 const HuntContent = () => {
+  const { hunt } = useLoaderData<LoaderData>()
   const { status } = useHuntManager()
 
   return (
     <main className="h-full w-full flex flex-col bg-mauve-400 dark:bg-mauve-600">
-      <HuntTopBar connection={status} />
+      <HuntTopBar hunt={hunt} connection={status} />
       <div className="flex flex-1 p-4 gap-2 pt-0 pl-2">
         <SideBar />
         <section className="h-full w-full bg-mauve-200 dark:bg-mauve-900 rounded-xl">
           <HuntCanvasGaph />
-
         </section>
       </div>
-    </main >
+    </main>
   )
 }
 
 const Hunt = () => {
   const { slug } = useLoaderData<LoaderData>()
 
-  return <HuntManagerProvider slug={slug}>
-    <HuntContent />
-  </HuntManagerProvider>
+  return (
+    <HuntManagerProvider slug={slug}>
+      <HuntContent />
+    </HuntManagerProvider>
+  )
 }
 
 export default Hunt

@@ -1,6 +1,7 @@
 import mapboxgl from "mapbox-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
 import { FileImage, X } from "lucide-react"
+import { MediaPreview } from "~/components/ui/MediaPreview"
 import { useEffect, useRef, useState } from "react"
 import { Link, useRevalidator, useRouteLoaderData } from "react-router"
 import { MediaPicker } from "~/components/media/MediaPicker"
@@ -348,7 +349,7 @@ const HuntSettings = () => {
             className="w-full h-36 rounded-xl border-2 border-dashed border-mauve-300 dark:border-mauve-600 flex flex-col items-center justify-center gap-2 hover:border-mauve-400 transition-colors overflow-hidden"
           >
             {coverKey ? (
-              <img src={`/api/files/hunt-${slug}/url?key=${encodeURIComponent(coverKey)}`} alt="cover" className="w-full h-full object-cover" />
+              <MediaPreview src={`/api/files/hunt-${slug}/url?key=${encodeURIComponent(coverKey)}`} className="w-full h-full object-cover" />
             ) : (
               <>
                 <FileImage size={24} className="text-mauve-400" />

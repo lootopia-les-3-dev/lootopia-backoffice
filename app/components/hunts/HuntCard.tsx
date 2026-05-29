@@ -1,14 +1,14 @@
 import { FileImage } from "lucide-react"
 import { Link } from "react-router"
+import { MediaPreview } from "~/components/ui/MediaPreview"
 import type { HuntLight } from "~/types/Hunt"
 
 export const HuntCard = ({ hunt }: { hunt: HuntLight }) => (
   <Link to={"/hunts/" + encodeURIComponent(hunt.slug)} className="bg-mauve-300 dark:bg-mauve-700 aspect-video rounded-2xl shadow overflow-hidden flex flex-col group">
     <div className="flex-1 w-full overflow-hidden">
       {hunt.coverKey ? (
-        <img
+        <MediaPreview
           src={`/api/files/hunt-${hunt.slug}/url?key=${encodeURIComponent(hunt.coverKey)}`}
-          alt={hunt.name}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
       ) : (
