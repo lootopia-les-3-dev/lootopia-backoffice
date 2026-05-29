@@ -3,7 +3,7 @@ import "mapbox-gl/dist/mapbox-gl.css"
 import { FileImage, X } from "lucide-react"
 import { MediaPreview } from "~/components/ui/MediaPreview"
 import { useEffect, useRef, useState } from "react"
-import { Link, useRevalidator, useRouteLoaderData } from "react-router"
+import { Link, useNavigate, useRevalidator, useRouteLoaderData } from "react-router"
 import { MediaPicker } from "~/components/media/MediaPicker"
 import Switch from "~/components/utils/Switch"
 import { Field } from "~/components/ui/Field"
@@ -248,11 +248,25 @@ const HuntSettings = () => {
   const { hunt, slug } = useRouteLoaderData<() => LoaderData>("routes/_layout.hunts.$huntId._layout")!
   const rootData = useRouteLoaderData<typeof rootLoader>("root")
   const { revalidate } = useRevalidator()
+  const navigate = useNavigate()
 
   const userId = rootData?.user ? String(rootData.user.id) : undefined
   const mapboxToken = rootData?.mapboxToken ?? ""
 
   useEffect(() => { console.log("[hunt settings]", hunt) }, [])
+
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  const handleDelete = async () => {
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/hunts/${slug}`, { method: "DELETE" })
+      if (res.ok) navigate("/hunts")
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   const [name, setName] = useState(hunt?.name ?? "")
   const [description, setDescription] = useState((hunt as any)?.description ?? "")
@@ -419,7 +433,23 @@ const HuntSettings = () => {
 
         {error && <p className="text-sm text-red-500 dark:text-red-400">{error}</p>}
 
-        <div className="flex justify-end pt-2 pb-4">
+        <div className="flex items-center justify-between pt-2 pb-4">
+          {confirmDelete ? (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-red-400">Supprimer définitivement ?</span>
+              <button type="button" onClick={() => setConfirmDelete(false)} className="text-xs text-mauve-400 hover:opacity-60 px-2 py-1">
+                Annuler
+              </button>
+              <button type="button" onClick={handleDelete} disabled={deleting} className="text-xs text-red-400 font-semibold hover:opacity-60 px-2 py-1 disabled:opacity-40">
+                {deleting ? "Suppression..." : "Confirmer"}
+              </button>
+            </div>
+          ) : (
+            <button type="button" onClick={() => setConfirmDelete(true)} className="text-xs text-mauve-400 hover:text-red-500 transition-colors">
+              Supprimer la hunt
+            </button>
+          )}
+
           <button type="button" onClick={handleSave} disabled={saving || !name.trim()}
             className="px-6 py-2 rounded-lg text-sm bg-mauve-900 dark:bg-mauve-50 text-mauve-50 dark:text-mauve-900 font-medium hover:opacity-80 disabled:opacity-40 transition-opacity">
             {saving ? "Sauvegarde..." : saved ? "Sauvegardé ✓" : "Sauvegarder"}

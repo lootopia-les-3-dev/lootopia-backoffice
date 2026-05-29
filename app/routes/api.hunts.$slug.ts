@@ -21,5 +21,18 @@ export const action: ActionFunction = async ({ request, params }) => {
     }
   }
 
+  if (request.method === "DELETE") {
+    try {
+      await axios.delete(`${process.env.API_URL}hunts/${slug}`, {
+        headers: { cookie: request.headers.get("cookie") || "" },
+      })
+      return Response.json({ success: true })
+    } catch (err: any) {
+      const status = err?.response?.status ?? 500
+      const error = err?.response?.data?.error ?? "Erreur serveur"
+      return Response.json({ error }, { status })
+    }
+  }
+
   return Response.json({ error: "Method not allowed" }, { status: 405 })
 }
