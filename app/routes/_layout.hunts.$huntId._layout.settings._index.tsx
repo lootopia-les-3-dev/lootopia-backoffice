@@ -4,6 +4,7 @@ import { FileImage, X } from "lucide-react"
 import { MediaPreview } from "~/components/ui/MediaPreview"
 import { useEffect, useRef, useState } from "react"
 import { Link, useNavigate, useRevalidator, useRouteLoaderData } from "react-router"
+import { useUserLocation } from "~/hooks/useUserLocation"
 import { MediaPicker } from "~/components/media/MediaPicker"
 import Switch from "~/components/utils/Switch"
 import { Field } from "~/components/ui/Field"
@@ -74,8 +75,11 @@ const MapPicker = ({ geoType, value, onChange, mapboxToken }: {
   const mapRef = useRef<mapboxgl.Map | null>(null)
   const markerRef = useRef<mapboxgl.Marker | null>(null)
   const boundaryMarkersRef = useRef<mapboxgl.Marker[]>([])
+  const userMarkerRef = useRef<mapboxgl.Marker | null>(null)
   const valueRef = useRef<GeoValue>(value)
   useEffect(() => { valueRef.current = value }, [value])
+
+  const userLocation = useUserLocation()
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -183,10 +187,36 @@ const MapPicker = ({ geoType, value, onChange, mapboxToken }: {
     return () => {
       markerRef.current?.remove()
       boundaryMarkersRef.current.forEach((m) => m.remove())
+      userMarkerRef.current?.remove()
       map.remove()
       mapRef.current = null
     }
   }, [geoType, mapboxToken])
+
+  // Update user location marker
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || userLocation.status !== "granted") return
+
+    const { lat, lng } = userLocation
+
+    const el = document.createElement("div")
+    el.style.cssText = `
+      width: 16px; height: 16px; border-radius: 50%;
+      background: #3b82f6; border: 3px solid white;
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.4);
+    `
+
+    userMarkerRef.current?.remove()
+    userMarkerRef.current = new mapboxgl.Marker({ element: el })
+      .setLngLat([lng, lat])
+      .addTo(map)
+
+    // Center on user only if no zone is defined yet
+    if (!valueRef.current) {
+      map.flyTo({ center: [lng, lat], zoom: 13, duration: 1000 })
+    }
+  }, [userLocation])
 
   // Redraw on radius change
   useEffect(() => {
