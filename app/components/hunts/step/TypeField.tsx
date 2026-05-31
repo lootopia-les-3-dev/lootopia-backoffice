@@ -6,7 +6,7 @@ import type { HuntStep, StepType } from "~/types/Hunt"
 
 const ALL_TYPES: StepType[] = [
   "text", "image", "text-with-image", "qr-code",
-  "wait-input", "multi-directional", "geo", "ar", "final",
+  "wait-input", "multi-directional", "geo", "ar", "go-to-step", "final",
 ]
 
 type Props = {

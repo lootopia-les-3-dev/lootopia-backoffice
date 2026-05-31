@@ -1,5 +1,5 @@
 import { Handle, type NodeProps, Position } from "@xyflow/react"
-import { GitBranch, Image, Joystick, KeyRound, MapPin, MessageSquare, Plus, QrCode, ScanLine, Star, TextSelect } from "lucide-react"
+import { CornerDownRight, GitBranch, Image, Joystick, KeyRound, MapPin, MessageSquare, Plus, QrCode, ScanLine, Star, TextSelect } from "lucide-react"
 import type { CSSProperties, ReactNode } from "react"
 import { Link } from "react-router"
 import type { StepFollowedBy } from "~/types/Hunt"
@@ -29,6 +29,7 @@ const stepIcon: Record<string, ReactNode> = {
   geo: <MapPin className="w-4 h-4" />,
   ar: <Joystick className="w-4 h-4" />,
   final: <ScanLine className="w-4 h-4" />,
+  "go-to-step": <CornerDownRight className="w-4 h-4" />,
 }
 
 const stepLabel: Record<string, string> = {
@@ -42,6 +43,7 @@ const stepLabel: Record<string, string> = {
   geo: "Géo",
   ar: "AR",
   final: "Fin",
+  "go-to-step": "Aller à",
 }
 
 type BaseNodeProps = {
@@ -99,6 +101,17 @@ export const CustomStart = ({ data }: NodeProps) => {
         <span className="text-[9px] text-amber-400 font-semibold uppercase tracking-wider">start</span>
       </NodeShell>
       <Handle type="source" position={Position.Bottom} isConnectable={false} style={HANDLE_STYLE} />
+    </>
+  )
+}
+
+export const GoToStepNode = ({ data }: NodeProps) => {
+  const isActive = data.isActive as boolean
+  return (
+    <>
+      <Handle type="target" position={Position.Top} isConnectable={false} style={HANDLE_STYLE} />
+      <NodeShell id={data.id as string} stepType="go-to-step" isActive={isActive} href={`${data.id}`} />
+      {/* no source handle — go-to-step has no outgoing connection in the canvas */}
     </>
   )
 }

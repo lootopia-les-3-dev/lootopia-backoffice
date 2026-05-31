@@ -3,7 +3,7 @@ import { Background, BackgroundVariant, Controls, type Connection, type Edge, ty
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useParams } from "react-router"
 import { CustomEdge } from "~/components/hunts/graph/CustomEdges"
-import { CustomNode, CustomStart, MultiDirectionalNode, PlaceholderNode } from "~/components/hunts/graph/CustomNodes"
+import { CustomNode, CustomStart, GoToStepNode, MultiDirectionalNode, PlaceholderNode } from "~/components/hunts/graph/CustomNodes"
 import { useHuntManager } from "~/hooks/huntManagerHook"
 import type { HuntState } from "~/types/Hunt"
 
@@ -16,6 +16,7 @@ const nodesTypes = {
   placeholder: PlaceholderNode,
   custom: CustomNode,
   "multi-directional": MultiDirectionalNode,
+  "go-to-step": GoToStepNode,
 }
 
 const edgesTypes = {
@@ -57,7 +58,7 @@ const computeLayout = (
 ): { nodes: Node[]; edges: Edge[] } => {
   const backEdgeIds = getBackEdgeIds(huntState)
   const leafIds = huntState.steps
-    .filter((s) => s.step.type !== "final" && s.step.type !== "multi-directional" && s.followedBy.filter((f) => !backEdgeIds.has(`${s.id}-${f.nextStepId}`)).length === 0)
+    .filter((s) => s.step.type !== "final" && s.step.type !== "multi-directional" && s.step.type !== "go-to-step" && s.followedBy.filter((f) => !backEdgeIds.has(`${s.id}-${f.nextStepId}`)).length === 0)
     .map((s) => s.id)
 
   const g = new dagre.graphlib.Graph()
@@ -103,7 +104,7 @@ const computeLayout = (
     const isMulti = step.step.type === "multi-directional"
     return {
       id: step.id,
-      type: isMulti ? "multi-directional" : step.step.type === "start" ? "start" : "custom",
+      type: isMulti ? "multi-directional" : step.step.type === "start" ? "start" : step.step.type === "go-to-step" ? "go-to-step" : "custom",
       position: { x: x - NODE_WIDTH / 2, y: y - NODE_HEIGHT / 2 },
       data: {
         label: step.step.name,

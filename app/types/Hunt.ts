@@ -20,6 +20,7 @@ export type StepType =
   | "geo"
   | "ar"
   | "final"
+  | "go-to-step"
 
 export type GeoType = "boundary" | "point"
 export type InputType = "text" | "number" | "color" | "date"

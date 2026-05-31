@@ -6,6 +6,7 @@ import { ConditionsSection } from "~/components/hunts/step/ConditionsSection"
 import { ContentFields } from "~/components/hunts/step/ContentFields"
 import { FinalFields } from "~/components/hunts/step/FinalFields"
 import { GeoFields } from "~/components/hunts/step/GeoFields"
+import { GoToStepFields } from "~/components/hunts/step/GoToStepFields"
 import { NameField } from "~/components/hunts/step/NameField"
 import { QrCodeFields } from "~/components/hunts/step/QrCodeFields"
 import { TypeField } from "~/components/hunts/step/TypeField"
@@ -109,6 +110,9 @@ const StepPanel = () => {
           {displayType === "final" && <FinalFields step={step} stepId={stepId} updateStep={updateStep} />}
           {displayType === "multi-directional" && (
             <ConditionsSection step={step} huntState={huntState} upsertEdge={upsertEdge} deleteEdge={deleteEdge} />
+          )}
+          {displayType === "go-to-step" && (
+            <GoToStepFields step={step} stepId={stepId} updateStep={updateStep} />
           )}
         </>
       )}
