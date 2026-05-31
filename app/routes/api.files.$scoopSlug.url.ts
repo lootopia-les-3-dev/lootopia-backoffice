@@ -23,5 +23,10 @@ export const loader: LoaderFunction = async ({ request, params }) => {
 
   if (!signedUrl) return Response.json({ error: "Failed to get URL" }, { status: 502 })
 
+  // ?raw=1 returns JSON instead of redirect — needed for <video> which doesn't follow redirects
+  if (url.searchParams.get("raw") === "1") {
+    return Response.json({ url: signedUrl })
+  }
+
   return Response.redirect(signedUrl, 302)
 }

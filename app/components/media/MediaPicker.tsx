@@ -1,4 +1,5 @@
 import { FileImage, FolderOpen, Upload, X } from "lucide-react"
+import { MediaPreview } from "~/components/ui/MediaPreview"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Label } from "~/components/ui/Label"
 
@@ -144,10 +145,9 @@ const TabPanel = ({ slug, onSelect }: TabPanelProps) => {
                     className="group relative aspect-square rounded-xl overflow-hidden bg-mauve-100 dark:bg-mauve-700 border-2 border-transparent hover:border-purple-500 transition-colors"
                   >
                     {VIDEO_EXTS.test(f.relativePath) ? (
-                      <video
+                      <MediaPreview
                         src={`/api/files/${slug}/url?key=${encodeURIComponent(f.key)}`}
                         className="w-full h-full object-cover"
-                        autoPlay muted loop playsInline disablePictureInPicture
                       />
                     ) : (
                       <img

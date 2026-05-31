@@ -30,16 +30,16 @@ export const loader: LoaderFunction = async ({ request }) => {
 
 const Hunt = () => {
   const { hunts, teams } = useLoaderData<typeof loader>()
-  const [modalOpen, setModalOpen] = useState(false)
+  const [createOpen, setCreateOpen] = useState(false)
 
   return (
     <>
       <main className="h-full w-full flex flex-col bg-mauve-200 dark:bg-mauve-600 p-14">
         <h1 className="text-2xl font-semibold mb-6 text-mauve-900 dark:text-mauve-50">Hunts</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {hunts?.map((hunt) => <HuntCard key={hunt.id} hunt={hunt} />)}
+          {hunts?.map((hunt) => <HuntCard key={hunt.slug} hunt={hunt} />)}
           <button
-            onClick={() => setModalOpen(true)}
+            onClick={() => setCreateOpen(true)}
             className="aspect-video bg-mauve-300 dark:bg-mauve-700 rounded-2xl flex justify-center items-center h-full w-full border-4 border-mauve-400 dark:border-mauve-500 border-dotted hover:border-mauve-500 dark:hover:border-mauve-300 hover:cursor-pointer transition-colors"
           >
             <Plus className="h-10 w-10 text-mauve-500 dark:text-mauve-300" />
@@ -47,11 +47,7 @@ const Hunt = () => {
         </div>
       </main>
 
-      <CreateHuntModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        teams={teams}
-      />
+      <CreateHuntModal open={createOpen} onClose={() => setCreateOpen(false)} teams={teams} />
     </>
   )
 }

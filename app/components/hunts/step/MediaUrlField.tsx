@@ -1,4 +1,5 @@
 import { FileImage, X } from "lucide-react"
+import { MediaPreview } from "~/components/ui/MediaPreview"
 import { useState } from "react"
 import { useRouteLoaderData } from "react-router"
 import { MediaPicker } from "~/components/media/MediaPicker"
@@ -15,9 +16,6 @@ type Props = {
   field?: string
   label?: string
 }
-
-const IMAGE_EXTS = /\.(jpe?g|png|webp|gif|svg|avif)$/i
-const VIDEO_EXTS = /\.(mp4|webm|ogg|mov|avi)$/i
 
 const scoopFromKey = (key: string, fallback: string) =>
   key.includes("/") ? key.split("/")[0] : fallback
@@ -45,9 +43,6 @@ export const MediaUrlField = ({
       : `/api/files/${scoopFromKey(value, `hunt-${huntSlug}`)}/url?key=${encodeURIComponent(value)}`
     : null
 
-  const isVideo = value && VIDEO_EXTS.test(value)
-  const isImage = value && !isVideo
-
   const mediaScopes = {
     ...(huntSlug ? { hunt: { huntSlug } } : {}),
     ...(userId ? { user: { userId } } : {}),
@@ -63,12 +58,8 @@ export const MediaUrlField = ({
             onClick={() => setPicker(true)}
             className="w-full h-36 rounded-xl border-2 border-dashed border-mauve-500 dark:border-mauve-600 flex flex-col items-center justify-center gap-2 hover:border-mauve-400 dark:hover:border-mauve-500 transition-colors overflow-hidden"
           >
-            {src && isImage && (
-              <img src={src} alt="preview" className="w-full h-full object-cover"
-                onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }} />
-            )}
-            {src && isVideo && (
-              <video src={src} className="w-full h-full object-cover" muted playsInline />
+            {src && (
+              <MediaPreview src={src} className="w-full h-full object-cover" />
             )}
             {!src && (
               <>

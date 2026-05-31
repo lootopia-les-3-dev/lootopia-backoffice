@@ -3,6 +3,7 @@ import { FileImage, FolderOpen, Search, Upload, X } from "lucide-react"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { redirect, useLoaderData, type LoaderFunction } from "react-router"
 import { Label } from "~/components/ui/Label"
+import { MediaPreview } from "~/components/ui/MediaPreview"
 import { TextInput } from "~/components/ui/TextInput"
 import type { HuntLight } from "~/types/Hunt"
 import type { TeamLight } from "~/types/Team"
@@ -137,20 +138,10 @@ const FileGrid = ({ scoopSlug, search, onUploadDone }: FileGridProps) => {
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
               {mediaFiles.map((f) => (
                 <div key={f.key} className="group relative aspect-square rounded-xl overflow-hidden bg-mauve-100 dark:bg-mauve-700">
-                  {VIDEO_EXTS.test(f.relativePath) ? (
-                    <video
-                      src={`/api/files/${scoopSlug}/url?key=${encodeURIComponent(f.key)}`}
-                      className="w-full h-full object-cover"
-                      autoPlay muted loop playsInline disablePictureInPicture
-                    />
-                  ) : (
-                    <img
-                      src={`/api/files/${scoopSlug}/url?key=${encodeURIComponent(f.key)}`}
-                      alt={f.relativePath}
-                      className="w-full h-full object-cover"
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
-                    />
-                  )}
+                  <MediaPreview
+                    src={`/api/files/${scoopSlug}/url?key=${encodeURIComponent(f.key)}`}
+                    className="w-full h-full object-cover"
+                  />
                   <div className="absolute inset-x-0 bottom-0 p-1 bg-black/60 text-white text-[10px] truncate opacity-0 group-hover:opacity-100 transition-opacity">
                     {f.relativePath}
                   </div>
