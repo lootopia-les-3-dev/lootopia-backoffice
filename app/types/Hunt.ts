@@ -81,4 +81,5 @@ export type HuntLight = {
   teamSlug: string | null
   teamRole: Role
   createdBy: { firstName: string; lastName: string } | null
+  maxSteps?: number
 }

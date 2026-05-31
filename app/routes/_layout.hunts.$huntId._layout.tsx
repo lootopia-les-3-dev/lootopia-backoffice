@@ -36,17 +36,22 @@ export const loader: LoaderFunction = async ({ params, request }): Promise<Loade
 }
 
 
+const DEFAULT_MAX_STEPS = 5
+
 const HuntLayout = () => {
-  const { status } = useHuntManager()
+  const { status, huntState } = useHuntManager()
   const { hunt } = useRouteLoaderData<() => LoaderData>("routes/_layout.hunts.$huntId._layout") ?? { hunt: null }
+
+  const maxNodes = hunt?.maxSteps ?? DEFAULT_MAX_STEPS
+  const nodeCount = huntState?.steps.length ?? 0
 
   return (
     <main className="h-full w-full flex flex-col bg-mauve-400 dark:bg-mauve-600">
-      <HuntTopBar hunt={hunt} connection={status} />
+      <HuntTopBar hunt={hunt} connection={status} nodeCount={nodeCount} maxNodes={maxNodes} />
       <div className="flex flex-1 p-4 gap-2 pt-0 pl-2">
         <SideBar />
         <section className="h-full w-full hidden md:block bg-mauve-200 dark:bg-mauve-900 rounded-xl">
-          <HuntCanvasGaph />
+          <HuntCanvasGaph maxNodes={maxNodes} />
         </section>
         <section className="h-full w-full bg-mauve-200 dark:bg-mauve-900 rounded-xl p-8 overflow-hidden">
           <Outlet />

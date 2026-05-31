@@ -6,6 +6,7 @@ type RootLoaderData = {
   user: User | null
   socketUrl: string
   mapboxToken: string
+  shopUrl: string
 }
 
 export const rootLoader = async (c: Parameters<import("react-router").LoaderFunction>[0]) => {
@@ -24,6 +25,7 @@ export const rootLoader = async (c: Parameters<import("react-router").LoaderFunc
   const signInUrl = `${process.env.SSO_URL}/login?callbackUrl=${encodeURIComponent(url.href)}`
   const socketUrl = process.env.SOCKET_URL || ""
   const mapboxToken = process.env.MAPBOX_TOKEN || ""
+  const shopUrl = process.env.SHOP_URL || ""
 
-  return { signInUrl, user, socketUrl, mapboxToken } as RootLoaderData
+  return { signInUrl, user, socketUrl, mapboxToken, shopUrl } as RootLoaderData
 }

@@ -1,10 +1,11 @@
 import dagre from "@dagrejs/dagre"
 import { Background, BackgroundVariant, Controls, type Connection, type Edge, type Node, ReactFlow, useReactFlow } from "@xyflow/react"
 import { useCallback, useEffect, useRef, useState } from "react"
-import { useParams } from "react-router"
+import { useParams, useRouteLoaderData } from "react-router"
 import { CustomEdge } from "~/components/hunts/graph/CustomEdges"
 import { CustomNode, CustomStart, MultiDirectionalNode, PlaceholderNode } from "~/components/hunts/graph/CustomNodes"
 import { useHuntManager } from "~/hooks/huntManagerHook"
+import type { rootLoader } from "~/loaders/rootloader"
 import type { HuntState } from "~/types/Hunt"
 
 const NODE_WIDTH = 80
@@ -167,27 +168,41 @@ const FitAfterLayout = ({ trigger }: { trigger: number }) => {
   return null
 }
 
-export const HuntCanvasGaph = () => {
+type Props = {
+  maxNodes: number
+}
+
+export const HuntCanvasGaph = ({ maxNodes }: Props) => {
   const { huntState, createStep, insertStep, upsertEdge, deleteEdge } = useHuntManager()
-  const { stepId: activeStepId } = useParams()
+  const { stepId: activeStepId, huntId } = useParams()
+  const rootData = useRouteLoaderData<typeof rootLoader>("root")
+  const shopUrl = huntId ? `${rootData?.shopUrl}/${huntId}` : rootData?.shopUrl ?? ""
   const [nodes, setNodes] = useState<Node[]>([])
   const [edges, setEdges] = useState<Edge[]>([])
   const [layoutVersion, setLayoutVersion] = useState(0)
   const [isDarkMode, setIsDarkMode] = useState(false)
   const connectingFrom = useRef<{ nodeId: string; handleId: string | null } | null>(null)
 
+  const handleCreateStep = useCallback((previousStepId: string) => {
+    if (huntState && huntState.steps.length >= maxNodes) {
+      if (shopUrl) window.open(shopUrl, "_blank", "noopener,noreferrer")
+      return
+    }
+    createStep({ previousStepId })
+  }, [huntState, maxNodes, shopUrl, createStep])
+
   useEffect(() => {
     if (!huntState) return
     const { nodes: newNodes, edges: newEdges } = computeLayout(
       huntState,
-      (previousStepId) => createStep({ previousStepId }),
+      (previousStepId) => handleCreateStep(previousStepId),
       (fromStepId, toStepId) => insertStep(fromStepId, toStepId),
       activeStepId,
     )
     setNodes(newNodes)
     setEdges(newEdges)
     setLayoutVersion((v) => v + 1)
-  }, [huntState, createStep, insertStep, deleteEdge, activeStepId])
+  }, [huntState, handleCreateStep, insertStep, deleteEdge, activeStepId])
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)")
@@ -216,10 +231,10 @@ export const HuntCanvasGaph = () => {
     const target = event.target as Element
     // if the drag ended on a pane (not a node), create a new step
     if (target.classList.contains("react-flow__pane")) {
-      createStep({ previousStepId: from.nodeId })
+      handleCreateStep(from.nodeId)
     }
     connectingFrom.current = null
-  }, [createStep])
+  }, [handleCreateStep])
 
   return (
     <div className="h-full w-full">
