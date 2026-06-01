@@ -36,13 +36,13 @@ export const loader: LoaderFunction = async ({ params, request }): Promise<Loade
 }
 
 
-const DEFAULT_MAX_STEPS = 5
+const DEFAULT_MAX_STEPS = 20
 
 const HuntLayout = () => {
   const { status, huntState } = useHuntManager()
   const { hunt } = useRouteLoaderData<() => LoaderData>("routes/_layout.hunts.$huntId._layout") ?? { hunt: null }
 
-  const maxNodes = hunt?.maxSteps ?? DEFAULT_MAX_STEPS
+  const maxNodes = hunt?.maxNodes ?? DEFAULT_MAX_STEPS
   const nodeCount = huntState?.steps.length ?? 0
 
   return (
