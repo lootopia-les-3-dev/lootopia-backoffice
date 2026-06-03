@@ -1,11 +1,10 @@
 import { Box, QrCodeIcon } from "lucide-react"
 import { lazy, Suspense, useEffect, useState } from "react"
-import { useRouteLoaderData } from "react-router"
 import { Field } from "~/components/ui/Field"
 import { TextInput } from "~/components/ui/TextInput"
-import { getQrMatrix } from "~/utils/qrMatrix"
 import type { useHuntManager } from "~/hooks/huntManagerHook"
 import type { HuntStep } from "~/types/Hunt"
+import { getQrMatrix } from "~/utils/qrMatrix"
 
 const QrView2D = lazy(() =>
   import("~/components/qr/QrView2D").then((m) => ({ default: m.QrView2D }))
@@ -23,8 +22,6 @@ type Props = {
 }
 
 export const QrCodeFields = ({ step, stepId, updateStep }: Props) => {
-  const huntLoaderData = useRouteLoaderData<{ slug: string }>("routes/_layout.hunts.$huntId._layout")
-  const huntSlug = huntLoaderData?.slug ?? ""
 
   const [code, setCode] = useState(step.step.code ?? "")
   const [matrix, setMatrix] = useState<boolean[][]>([])
@@ -43,11 +40,7 @@ export const QrCodeFields = ({ step, stepId, updateStep }: Props) => {
 
   useEffect(() => { setCode(step.step.code ?? "") }, [step.step.code])
 
-  const qrValue = huntSlug
-    ? code
-      ? `lootopia://qr?h=${huntSlug}&c=${code}`
-      : `lootopia://qr?h=${huntSlug}`
-    : ""
+  const qrValue = code || ""
 
   useEffect(() => {
     if (!qrValue) return
@@ -74,22 +67,20 @@ export const QrCodeFields = ({ step, stepId, updateStep }: Props) => {
             <button
               type="button"
               onClick={() => setView("2d")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-sm transition-colors ${
-                view === "2d"
-                  ? "bg-mauve-900 dark:bg-mauve-50 text-mauve-50 dark:text-mauve-900"
-                  : "hover:bg-mauve-200 dark:hover:bg-mauve-700"
-              }`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-sm transition-colors ${view === "2d"
+                ? "bg-mauve-900 dark:bg-mauve-50 text-mauve-50 dark:text-mauve-900"
+                : "hover:bg-mauve-200 dark:hover:bg-mauve-700"
+                }`}
             >
               <QrCodeIcon className="h-4 w-4" /> 2D
             </button>
             <button
               type="button"
               onClick={() => setView("3d")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-sm transition-colors ${
-                view === "3d"
-                  ? "bg-mauve-900 dark:bg-mauve-50 text-mauve-50 dark:text-mauve-900"
-                  : "hover:bg-mauve-200 dark:hover:bg-mauve-700"
-              }`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-sm transition-colors ${view === "3d"
+                ? "bg-mauve-900 dark:bg-mauve-50 text-mauve-50 dark:text-mauve-900"
+                : "hover:bg-mauve-200 dark:hover:bg-mauve-700"
+                }`}
             >
               <Box className="h-4 w-4" /> 3D
             </button>

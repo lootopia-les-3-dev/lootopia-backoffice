@@ -7,6 +7,7 @@ import { Label } from "~/components/ui/Label"
 import { Select } from "~/components/ui/Select"
 import { Stepper } from "~/components/ui/Stepper"
 import type { useHuntManager } from "~/hooks/huntManagerHook"
+import { useUserLocation } from "~/hooks/useUserLocation"
 import { type rootLoader } from "~/loaders/rootloader"
 import type { GeoCoordinate, GeoType, HuntStep } from "~/types/Hunt"
 
@@ -68,6 +69,8 @@ export const GeoFields = ({ step, stepId, updateStep }: Props) => {
     updateStep({ stepId, boundaryCoordinates: [] })
   }
 
+  const userLocation = useUserLocation()
+
   const center = pointCoords ?? DEFAULT_CENTER
 
   const boundaryGeoJson: GeoJSON.Feature | null = boundary.length >= 3
@@ -113,6 +116,12 @@ export const GeoFields = ({ step, stepId, updateStep }: Props) => {
                   <Layer id="radius-outline" type="line" paint={{ "line-color": "#7c3aed", "line-width": 1.5 }} />
                 </Source>
               </>
+            )}
+
+            {userLocation.status === "granted" && (
+              <Marker longitude={userLocation.lng} latitude={userLocation.lat}>
+                <div className="w-4 h-4 rounded-full bg-blue-500 border-2 border-white shadow-lg" />
+              </Marker>
             )}
 
             {geoType === "boundary" && (
