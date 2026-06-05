@@ -15,6 +15,7 @@ export type StepType =
   | "image"
   | "text-with-image"
   | "qr-code"
+  | "nfc"
   | "wait-input"
   | "multi-directional"
   | "geo"

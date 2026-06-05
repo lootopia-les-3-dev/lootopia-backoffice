@@ -3,8 +3,8 @@ import { redirect, useLoaderData, type LoaderFunction } from "react-router"
 import { HuntCanvasGaph } from "~/components/hunts/graph/HuntCanvasGaph"
 import { SideBar } from "~/components/hunts/SideBar"
 import { HuntTopBar } from "~/components/hunts/TopBar"
-import { HuntManagerProvider } from "~/hooks/HuntManagerProvider"
 import { useHuntManager } from "~/hooks/huntManagerHook"
+import { HuntManagerProvider } from "~/hooks/HuntManagerProvider"
 import type { HuntLight } from "~/types/Hunt"
 
 type LoaderData = {
@@ -32,17 +32,23 @@ export const loader: LoaderFunction = async ({ params, request }): Promise<Loade
   return { hunt, slug: huntId || "" }
 }
 
+const DEFAULT_MAX_STEPS = 20
+
+
 const HuntContent = () => {
+  const { status, huntState } = useHuntManager()
   const { hunt } = useLoaderData<LoaderData>()
-  const { status } = useHuntManager()
+
+  const maxNodes = hunt?.maxNodes ?? DEFAULT_MAX_STEPS
+  const nodeCount = huntState?.steps.length ?? 0
 
   return (
     <main className="h-full w-full flex flex-col bg-mauve-400 dark:bg-mauve-600">
-      <HuntTopBar hunt={hunt} connection={status} />
+      <HuntTopBar hunt={hunt} connection={status} nodeCount={nodeCount} maxNodes={maxNodes} />
       <div className="flex flex-1 p-4 gap-2 pt-0 pl-2">
         <SideBar />
         <section className="h-full w-full bg-mauve-200 dark:bg-mauve-900 rounded-xl">
-          <HuntCanvasGaph />
+          <HuntCanvasGaph maxNodes={maxNodes} />
         </section>
       </div>
     </main>

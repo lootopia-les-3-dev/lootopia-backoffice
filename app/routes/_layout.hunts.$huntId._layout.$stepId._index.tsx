@@ -8,6 +8,7 @@ import { FinalFields } from "~/components/hunts/step/FinalFields"
 import { GeoFields } from "~/components/hunts/step/GeoFields"
 import { GoToStepFields } from "~/components/hunts/step/GoToStepFields"
 import { NameField } from "~/components/hunts/step/NameField"
+import { NfcFields } from "~/components/hunts/step/NfcFields"
 import { QrCodeFields } from "~/components/hunts/step/QrCodeFields"
 import { TypeField } from "~/components/hunts/step/TypeField"
 import { WaitInputFields } from "~/components/hunts/step/WaitInputFields"
@@ -104,6 +105,7 @@ const StepPanel = () => {
             <ContentFields step={step} stepId={stepId} updateStep={updateStep} stepType={displayType} />
           )}
           {displayType === "qr-code" && <QrCodeFields step={step} stepId={stepId} updateStep={updateStep} />}
+          {displayType === "nfc" && <NfcFields step={step} stepId={stepId} updateStep={updateStep} />}
           {displayType === "wait-input" && <WaitInputFields step={step} stepId={stepId} updateStep={updateStep} />}
           {displayType === "geo" && <GeoFields step={step} stepId={stepId} updateStep={updateStep} />}
           {displayType === "ar" && <ArFields step={step} stepId={stepId} updateStep={updateStep} />}

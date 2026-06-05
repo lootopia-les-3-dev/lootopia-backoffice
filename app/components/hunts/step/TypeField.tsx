@@ -5,7 +5,7 @@ import type { useHuntManager } from "~/hooks/huntManagerHook"
 import type { HuntStep, StepType } from "~/types/Hunt"
 
 const ALL_TYPES: StepType[] = [
-  "text", "image", "text-with-image", "qr-code",
+  "text", "image", "text-with-image", "qr-code", "nfc",
   "wait-input", "multi-directional", "geo", "ar", "go-to-step", "final",
 ]
 
