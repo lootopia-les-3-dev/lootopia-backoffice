@@ -71,7 +71,17 @@ export const GeoFields = ({ step, stepId, updateStep }: Props) => {
 
   const userLocation = useUserLocation()
 
-  const center = pointCoords ?? DEFAULT_CENTER
+  const validBoundary = boundary.filter((p) => typeof p?.lat === "number" && typeof p?.lng === "number" && isFinite(p.lat) && isFinite(p.lng))
+  const boundaryCenter: GeoCoordinate | null = validBoundary.length > 0
+    ? { lat: validBoundary.reduce((s, p) => s + p.lat, 0) / validBoundary.length, lng: validBoundary.reduce((s, p) => s + p.lng, 0) / validBoundary.length }
+    : null
+
+  const validPoint = pointCoords && isFinite(pointCoords.lat) && isFinite(pointCoords.lng) ? pointCoords : null
+
+  const center = validPoint
+    ?? boundaryCenter
+    ?? (userLocation.status === "granted" ? { lat: userLocation.lat, lng: userLocation.lng } : null)
+    ?? DEFAULT_CENTER
 
   const boundaryGeoJson: GeoJSON.Feature | null = boundary.length >= 3
     ? {
@@ -108,10 +118,10 @@ export const GeoFields = ({ step, stepId, updateStep }: Props) => {
             mapStyle="mapbox://styles/mapbox/dark-v11"
             onClick={handleMapClick}
           >
-            {geoType === "point" && pointCoords && (
+            {geoType === "point" && validPoint && (
               <>
-                <Marker longitude={pointCoords.lng} latitude={pointCoords.lat} />
-                <Source id="radius" type="geojson" data={makeCircleGeoJson(pointCoords, radius)}>
+                <Marker longitude={validPoint.lng} latitude={validPoint.lat} />
+                <Source id="radius" type="geojson" data={makeCircleGeoJson(validPoint, radius)}>
                   <Layer id="radius-fill" type="fill" paint={{ "fill-color": "#7c3aed", "fill-opacity": 0.15 }} />
                   <Layer id="radius-outline" type="line" paint={{ "line-color": "#7c3aed", "line-width": 1.5 }} />
                 </Source>
@@ -126,7 +136,7 @@ export const GeoFields = ({ step, stepId, updateStep }: Props) => {
 
             {geoType === "boundary" && (
               <>
-                {boundary.map((c, i) => (
+                {validBoundary.map((c, i) => (
                   <Marker
                     key={i}
                     longitude={c.lng}

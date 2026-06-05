@@ -76,26 +76,39 @@ const MapPicker = ({ geoType, value, onChange, mapboxToken }: {
   const markerRef = useRef<mapboxgl.Marker | null>(null)
   const boundaryMarkersRef = useRef<mapboxgl.Marker[]>([])
   const userMarkerRef = useRef<mapboxgl.Marker | null>(null)
+  // Always-fresh refs — no stale closure issues
   const valueRef = useRef<GeoValue>(value)
+  const onChangeRef = useRef(onChange)
   useEffect(() => { valueRef.current = value }, [value])
+  useEffect(() => { onChangeRef.current = onChange }, [onChange])
 
   const userLocation = useUserLocation()
+  const userLocationRef = useRef(userLocation)
+  useEffect(() => { userLocationRef.current = userLocation }, [userLocation])
 
   useEffect(() => {
     if (!containerRef.current) return
     mapboxgl.accessToken = mapboxToken
 
+    // Priority: existing zone → user location → Paris
+    const userLoc = userLocationRef.current.status === "granted"
+      ? [userLocationRef.current.lng, userLocationRef.current.lat] as [number, number]
+      : null
+
     const initialCenter: [number, number] =
       value?.type === "circle" ? [value.center.lng, value.center.lat]
       : value?.type === "boundary" && value.boundary.length > 0
-        ? [value.boundary[0].lng, value.boundary[0].lat]
-        : [2.3488, 48.8534]
+        ? [
+            value.boundary.reduce((s, p) => s + p.lng, 0) / value.boundary.length,
+            value.boundary.reduce((s, p) => s + p.lat, 0) / value.boundary.length,
+          ]
+        : userLoc ?? [2.3488, 48.8534]
 
     const map = new mapboxgl.Map({
       container: containerRef.current,
       style: "mapbox://styles/mapbox/dark-v11",
       center: initialCenter,
-      zoom: value ? 11 : 10,
+      zoom: value ? 11 : userLoc ? 13 : 10,
     })
     mapRef.current = map
     map.addControl(new mapboxgl.NavigationControl(), "top-right")
@@ -103,41 +116,37 @@ const MapPicker = ({ geoType, value, onChange, mapboxToken }: {
     map.on("load", () => {
       if (valueRef.current) drawZone(map, valueRef.current)
 
-      // ── Circle mode ──────────────────────────────────────────────────────────
       if (geoType === "circle") {
-        const placeMarker = (lngLat: [number, number], radius: number) => {
+        const placeMarker = (lngLat: [number, number]) => {
           markerRef.current?.remove()
           const m = new mapboxgl.Marker({ draggable: true, color: FILL }).setLngLat(lngLat).addTo(map)
           markerRef.current = m
 
           m.on("drag", () => {
             const ll = m.getLngLat()
-            const r = (valueRef.current as CircleGeo)?.radius ?? radius
+            const r = (valueRef.current as CircleGeo)?.radius ?? 500
             drawZone(map, { type: "circle", center: { lat: ll.lat, lng: ll.lng }, radius: r })
           })
           m.on("dragend", () => {
             const ll = m.getLngLat()
-            const r = (valueRef.current as CircleGeo)?.radius ?? radius
-            onChange({ type: "circle", center: { lat: ll.lat, lng: ll.lng }, radius: r })
+            const r = (valueRef.current as CircleGeo)?.radius ?? 500
+            onChangeRef.current({ type: "circle", center: { lat: ll.lat, lng: ll.lng }, radius: r })
           })
         }
 
         if (valueRef.current?.type === "circle") {
-          const { center, radius } = valueRef.current
-          placeMarker([center.lng, center.lat], radius)
+          placeMarker([valueRef.current.center.lng, valueRef.current.center.lat])
         }
 
         map.on("click", (e) => {
           const r = (valueRef.current as CircleGeo)?.radius ?? 500
-          placeMarker([e.lngLat.lng, e.lngLat.lat], r)
-          onChange({ type: "circle", center: { lat: e.lngLat.lat, lng: e.lngLat.lng }, radius: r })
+          placeMarker([e.lngLat.lng, e.lngLat.lat])
+          onChangeRef.current({ type: "circle", center: { lat: e.lngLat.lat, lng: e.lngLat.lng }, radius: r })
         })
       }
 
-      // ── Boundary mode ─────────────────────────────────────────────────────────
       if (geoType === "boundary") {
         const syncMarkers = (pts: LatLng[]) => {
-          // Remove old markers
           boundaryMarkersRef.current.forEach((m) => m.remove())
           boundaryMarkersRef.current = []
 
@@ -156,7 +165,7 @@ const MapPicker = ({ geoType, value, onChange, mapboxToken }: {
               const current = (valueRef.current as BoundaryGeo)?.boundary ?? []
               const ll = m.getLngLat()
               const updated = current.map((p, j) => j === i ? { lat: ll.lat, lng: ll.lng } : p)
-              onChange({ type: "boundary", boundary: updated })
+              onChangeRef.current({ type: "boundary", boundary: updated })
             })
 
             boundaryMarkersRef.current.push(m)
@@ -174,12 +183,11 @@ const MapPicker = ({ geoType, value, onChange, mapboxToken }: {
 
         map.on("click", (e) => {
           const current = (valueRef.current as BoundaryGeo)?.boundary ?? []
-          const newPt = { lat: e.lngLat.lat, lng: e.lngLat.lng }
-          const updated = [...current, newPt]
+          const updated = [...current, { lat: e.lngLat.lat, lng: e.lngLat.lng }]
           syncMarkers(updated)
           const next: BoundaryGeo = { type: "boundary", boundary: updated }
           drawZone(map, next)
-          onChange(next)
+          onChangeRef.current(next)
         })
       }
     })
@@ -193,7 +201,7 @@ const MapPicker = ({ geoType, value, onChange, mapboxToken }: {
     }
   }, [geoType, mapboxToken])
 
-  // Update user location marker
+  // User location marker + initial fly-to if no zone
   useEffect(() => {
     const map = mapRef.current
     if (!map || userLocation.status !== "granted") return
@@ -201,20 +209,13 @@ const MapPicker = ({ geoType, value, onChange, mapboxToken }: {
     const { lat, lng } = userLocation
 
     const el = document.createElement("div")
-    el.style.cssText = `
-      width: 16px; height: 16px; border-radius: 50%;
-      background: #3b82f6; border: 3px solid white;
-      box-shadow: 0 0 0 3px rgba(59,130,246,0.4);
-    `
+    el.style.cssText = "width:16px;height:16px;border-radius:50%;background:#3b82f6;border:3px solid white;box-shadow:0 0 0 3px rgba(59,130,246,0.4)"
 
     userMarkerRef.current?.remove()
-    userMarkerRef.current = new mapboxgl.Marker({ element: el })
-      .setLngLat([lng, lat])
-      .addTo(map)
+    userMarkerRef.current = new mapboxgl.Marker({ element: el }).setLngLat([lng, lat]).addTo(map)
 
-    // Center on user only if no zone is defined yet
     if (!valueRef.current) {
-      map.flyTo({ center: [lng, lat], zoom: 13, duration: 1000 })
+      map.flyTo({ center: [lng, lat], zoom: 13, duration: 800 })
     }
   }, [userLocation])
 

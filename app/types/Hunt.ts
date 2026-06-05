@@ -49,6 +49,13 @@ export type Step = {
   pointCoordinates?: GeoCoordinate
   radius?: number
   stepGame?: StepGame
+  arGeoType?: GeoType
+  arPointCoordinates?: GeoCoordinate
+  arBoundaryCoordinates?: GeoCoordinate[]
+  arRadius?: number
+  mediaUrl?: string
+  FinalMediaUrl?: string
+  targetStepId?: string
 }
 
 export type HuntStep = {

@@ -17,6 +17,8 @@ const deserializeStep = (raw: HuntState["steps"][number]): HuntState["steps"][nu
     ...raw.step,
     pointCoordinates: tryParseJson<GeoCoordinate>(raw.step.pointCoordinates),
     boundaryCoordinates: tryParseJson<GeoCoordinate[]>(raw.step.boundaryCoordinates),
+    arPointCoordinates: tryParseJson<GeoCoordinate>(raw.step.arPointCoordinates),
+    arBoundaryCoordinates: tryParseJson<GeoCoordinate[]>(raw.step.arBoundaryCoordinates),
   },
 })
 
@@ -50,6 +52,13 @@ type StepUpdatePayload = {
   pointCoordinates?: GeoCoordinate
   radius?: number
   stepGame?: StepGame
+  arGeoType?: GeoType | null
+  arPointCoordinates?: GeoCoordinate | null
+  arBoundaryCoordinates?: GeoCoordinate[] | null
+  arRadius?: number | null
+  mediaUrl?: string
+  FinalMediaUrl?: string
+  targetStepId?: string
 }
 
 type EdgeUpsertPayload = {

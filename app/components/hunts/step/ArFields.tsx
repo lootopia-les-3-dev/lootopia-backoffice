@@ -6,6 +6,7 @@ import { Field } from "~/components/ui/Field"
 import { Label } from "~/components/ui/Label"
 import { Select } from "~/components/ui/Select"
 import { Stepper } from "~/components/ui/Stepper"
+import Switch from "~/components/utils/Switch"
 import type { useHuntManager } from "~/hooks/huntManagerHook"
 import { useUserLocation } from "~/hooks/useUserLocation"
 import { type rootLoader } from "~/loaders/rootloader"
@@ -38,16 +39,38 @@ export const ArFields = ({ step, stepId, updateStep }: Props) => {
   const { mapboxToken } = useRouteLoaderData<typeof rootLoader>("root")!
 
   const arGeoType = (step.step.arGeoType as GeoType | undefined) ?? "point"
+  const [geoEnabled, setGeoEnabled] = useState(!!(step.step.arGeoType))
   const [pointCoords, setPointCoords] = useState<GeoCoordinate | null>(step.step.arPointCoordinates as GeoCoordinate ?? null)
   const [boundary, setBoundary] = useState<GeoCoordinate[]>(step.step.arBoundaryCoordinates as GeoCoordinate[] ?? [])
   const [radius, setRadius] = useState((step.step.arRadius as number | undefined) ?? 100)
 
+  useEffect(() => { setGeoEnabled(!!(step.step.arGeoType)) }, [step.step.arGeoType])
   useEffect(() => { setPointCoords(step.step.arPointCoordinates as GeoCoordinate ?? null) }, [step.step.arPointCoordinates])
   useEffect(() => { setBoundary(step.step.arBoundaryCoordinates as GeoCoordinate[] ?? []) }, [step.step.arBoundaryCoordinates])
   useEffect(() => { setRadius((step.step.arRadius as number | undefined) ?? 100) }, [step.step.arRadius])
 
+  const handleToggleGeo = (enabled: boolean) => {
+    setGeoEnabled(enabled)
+    if (!enabled) {
+      updateStep({ stepId, arGeoType: null, arPointCoordinates: null, arBoundaryCoordinates: null, arRadius: null })
+    } else {
+      updateStep({ stepId, arGeoType: "point" })
+    }
+  }
+
   const userLocation = useUserLocation()
-  const center = pointCoords ?? DEFAULT_CENTER
+
+  const validBoundary = boundary.filter((p) => typeof p?.lat === "number" && typeof p?.lng === "number" && isFinite(p.lat) && isFinite(p.lng))
+  const boundaryCenter: GeoCoordinate | null = validBoundary.length > 0
+    ? { lat: validBoundary.reduce((s, p) => s + p.lat, 0) / validBoundary.length, lng: validBoundary.reduce((s, p) => s + p.lng, 0) / validBoundary.length }
+    : null
+
+  const validPoint = pointCoords && isFinite(pointCoords.lat) && isFinite(pointCoords.lng) ? pointCoords : null
+
+  const center = validPoint
+    ?? boundaryCenter
+    ?? (userLocation.status === "granted" ? { lat: userLocation.lat, lng: userLocation.lng } : null)
+    ?? DEFAULT_CENTER
 
   const handleMapClick = (e: { lngLat: { lat: number; lng: number } }) => {
     const coord = { lat: e.lngLat.lat, lng: e.lngLat.lng }
@@ -95,6 +118,13 @@ export const ArFields = ({ step, stepId, updateStep }: Props) => {
         </Select>
       </Field>
 
+      <div className="flex items-center justify-between">
+        <Label>Zone géographique AR</Label>
+        <Switch enabled={geoEnabled} onChange={handleToggleGeo} />
+      </div>
+
+      {geoEnabled && (
+      <>
       <Field label="Type de zone AR">
         <Select
           value={arGeoType}
@@ -117,10 +147,10 @@ export const ArFields = ({ step, stepId, updateStep }: Props) => {
             mapStyle="mapbox://styles/mapbox/dark-v11"
             onClick={handleMapClick}
           >
-            {arGeoType === "point" && pointCoords && (
+            {arGeoType === "point" && validPoint && (
               <>
-                <Marker longitude={pointCoords.lng} latitude={pointCoords.lat} />
-                <Source id="ar-radius" type="geojson" data={makeCircleGeoJson(pointCoords, radius)}>
+                <Marker longitude={validPoint.lng} latitude={validPoint.lat} />
+                <Source id="ar-radius" type="geojson" data={makeCircleGeoJson(validPoint, radius)}>
                   <Layer id="ar-radius-fill" type="fill" paint={{ "fill-color": "#f59e0b", "fill-opacity": 0.15 }} />
                   <Layer id="ar-radius-outline" type="line" paint={{ "line-color": "#f59e0b", "line-width": 1.5 }} />
                 </Source>
@@ -135,7 +165,7 @@ export const ArFields = ({ step, stepId, updateStep }: Props) => {
 
             {arGeoType === "boundary" && (
               <>
-                {boundary.map((c, i) => (
+                {validBoundary.map((c, i) => (
                   <Marker
                     key={i}
                     longitude={c.lng}
@@ -170,6 +200,8 @@ export const ArFields = ({ step, stepId, updateStep }: Props) => {
             onChange={(next) => { setRadius(next); updateStep({ stepId, arRadius: next }) }}
           />
         </Field>
+      )}
+      </>
       )}
     </>
   )
