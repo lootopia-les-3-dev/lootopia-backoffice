@@ -7,6 +7,7 @@ type RootLoaderData = {
   socketUrl: string
   mapboxToken: string
   shopUrl: string
+  authToken: string | null
 }
 
 export const rootLoader = async (c: Parameters<import("react-router").LoaderFunction>[0]) => {
@@ -27,5 +28,16 @@ export const rootLoader = async (c: Parameters<import("react-router").LoaderFunc
   const mapboxToken = process.env.MAPBOX_TOKEN || ""
   const shopUrl = process.env.SHOP_URL || ""
 
-  return { signInUrl, user, socketUrl, mapboxToken, shopUrl } as RootLoaderData
+  const tokenResult = await axios.get<{ token: string }>(`${process.env.SSO_URL}/api/auth/token`, {
+    headers: { cookie: c.request.headers.get("cookie") || "" },
+  }).catch((e) => {
+    console.error("[rootLoader] /api/auth/token failed:", e?.response?.status, e?.response?.data ?? e?.message)
+    return { data: null }
+  })
+  const rawToken = tokenResult.data?.token ?? null
+  const authToken = rawToken ? rawToken.split(".").slice(0, 3).join(".") : null
+  console.log("[rootLoader] rawToken:", rawToken)
+  console.log("[rootLoader] authToken (stripped):", authToken)
+
+  return { signInUrl, user, socketUrl, mapboxToken, shopUrl, authToken } as RootLoaderData
 }

@@ -106,11 +106,11 @@ export const GeoFields = ({ step, stepId, updateStep }: Props) => {
         </Select>
       </Field>
 
-      <div className="flex flex-col gap-1 h-full">
+      <div className="flex flex-col gap-1">
         <Label>
           Carte — {geoType === "point" ? "clic pour placer le point" : "clics pour tracer le polygone"}
         </Label>
-        <div className="rounded-lg overflow-hidden h-full">
+        <div className="rounded-lg overflow-hidden" style={{ height: 300 }}>
           <Map
             mapboxAccessToken={mapboxToken}
             initialViewState={{ longitude: center.lng, latitude: center.lat, zoom: 12 }}
@@ -160,6 +160,12 @@ export const GeoFields = ({ step, stepId, updateStep }: Props) => {
             Effacer le polygone
           </button>
         )}
+        <p className="text-xs text-mauve-400">
+          {userLocation.status === "granted" && `Position : ${userLocation.lat.toFixed(5)}, ${userLocation.lng.toFixed(5)}`}
+          {userLocation.status === "requesting" && "Récupération de la position…"}
+          {userLocation.status === "denied" && `Localisation refusée : ${userLocation.error}`}
+          {userLocation.status === "idle" && "Localisation en attente…"}
+        </p>
       </div>
 
       {geoType === "point" && (

@@ -135,11 +135,11 @@ export const ArFields = ({ step, stepId, updateStep }: Props) => {
         </Select>
       </Field>
 
-      <div className="flex flex-col gap-1 h-full">
+      <div className="flex flex-col gap-1">
         <Label>
           Carte — {arGeoType === "point" ? "clic pour placer le point" : "clics pour tracer le polygone"}
         </Label>
-        <div className="rounded-lg overflow-hidden h-full">
+        <div className="rounded-lg overflow-hidden" style={{ height: 300 }}>
           <Map
             mapboxAccessToken={mapboxToken}
             initialViewState={{ longitude: center.lng, latitude: center.lat, zoom: 12 }}
