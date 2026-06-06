@@ -1,8 +1,8 @@
-import { Box, QrCodeIcon } from "lucide-react"
+import { Box, QrCodeIcon, ScanLine } from "lucide-react"
 import { lazy, Suspense, useEffect, useState } from "react"
 import { Field } from "~/components/ui/Field"
 import { TextInput } from "~/components/ui/TextInput"
-import type { useHuntManager } from "~/hooks/huntManagerHook"
+import { useHuntManager } from "~/hooks/huntManagerHook"
 import type { HuntStep } from "~/types/Hunt"
 import { getQrMatrix } from "~/utils/qrMatrix"
 
@@ -22,10 +22,11 @@ type Props = {
 }
 
 export const QrCodeFields = ({ step, stepId, updateStep }: Props) => {
-
+  const { socketRef, mobileConnected } = useHuntManager()
   const [code, setCode] = useState(step.step.code ?? "")
   const [matrix, setMatrix] = useState<boolean[][]>([])
   const [view, setView] = useState<View>("2d")
+  const [scanning, setScanning] = useState(false)
 
   // 2D options
   const [fgColor, setFgColor] = useState("#1a1a2e")
@@ -39,6 +40,23 @@ export const QrCodeFields = ({ step, stepId, updateStep }: Props) => {
   const [moduleColor3d, setModuleColor3d] = useState("#1a1a2e")
 
   useEffect(() => { setCode(step.step.code ?? "") }, [step.step.code])
+
+  useEffect(() => {
+    const socket = socketRef.current
+    if (!socket) return
+    const onResult = ({ code: scanned }: { code: string }) => {
+      setCode(scanned)
+      updateStep({ stepId, code: scanned })
+      setScanning(false)
+    }
+    const onCancel = () => setScanning(false)
+    socket.on("qr:scan:result", onResult)
+    socket.on("qr:scan:cancel", onCancel)
+    return () => {
+      socket.off("qr:scan:result", onResult)
+      socket.off("qr:scan:cancel", onCancel)
+    }
+  }, [socketRef, stepId, updateStep])
 
   const qrValue = code || ""
 
@@ -58,6 +76,23 @@ export const QrCodeFields = ({ step, stepId, updateStep }: Props) => {
           placeholder="ex: ABC123"
         />
       </Field>
+      <div className="flex items-center gap-2 flex-wrap">
+        <button
+          type="button"
+          onClick={() => {
+            setScanning(true)
+            socketRef.current?.emit("qr:scan:request")
+          }}
+          disabled={scanning || !mobileConnected}
+          className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg border border-mauve-400 hover:bg-mauve-200 dark:hover:bg-mauve-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          <ScanLine className="h-4 w-4" />
+          {scanning ? "En attente…" : "Scanner QR"}
+        </button>
+        {!mobileConnected && (
+          <span className="text-xs text-mauve-400">Ouvrez l'app mobile</span>
+        )}
+      </div>
 
       {qrValue && matrix.length > 0 && (
         <div className="flex flex-col gap-3">

@@ -81,6 +81,7 @@ export type HuntManagerContextType = {
   huntState: HuntState | null
   socketRef: React.RefObject<Socket | null>
   fieldLocks: Map<string, FieldLock>
+  mobileConnected: boolean
   createStep: (payload: StepCreatePayload) => void
   insertStep: (fromStepId: string, toStepId: string) => void
   updateStep: (payload: StepUpdatePayload) => void
@@ -108,6 +109,7 @@ export const useHuntManagerInternal = (slug: string): HuntManagerContextType => 
   const [status, setStatus] = useState<Status>("connecting")
   const [huntState, setHuntState] = useState<HuntState | null>(null)
   const [fieldLocks, setFieldLocks] = useState<Map<string, FieldLock>>(new Map())
+  const [mobileConnected, setMobileConnected] = useState(false)
   const pendingInsert = useRef<Map<string, string>>(new Map())
 
   useEffect(() => {
@@ -227,9 +229,25 @@ export const useHuntManagerInternal = (slug: string): HuntManagerContextType => 
       })
     })
 
+    socket.on("mobile:presence", ({ connected }: { connected: boolean }) => {
+      setMobileConnected(connected)
+    })
+
+    let pingWatchdog: ReturnType<typeof setTimeout> | null = null
+    const resetWatchdog = () => {
+      if (pingWatchdog) clearTimeout(pingWatchdog)
+      pingWatchdog = setTimeout(() => setMobileConnected(false), 12000)
+    }
+    socket.on("mobile:ping", () => {
+      setMobileConnected(true)
+      resetWatchdog()
+    })
+
     return () => {
+      if (pingWatchdog) clearTimeout(pingWatchdog)
       socket.disconnect()
       socketRef.current = null
+      setMobileConnected(false)
     }
   }, [socketUrl, slug, authToken])
 
@@ -255,5 +273,5 @@ export const useHuntManagerInternal = (slug: string): HuntManagerContextType => 
     emit("step:create", { previousStepId: fromStepId })
   }, [emit])
 
-  return { status, huntState, socketRef, fieldLocks, createStep, insertStep, updateStep, upsertEdge, deleteEdge, lockField, unlockField }
+  return { status, huntState, socketRef, fieldLocks, mobileConnected, createStep, insertStep, updateStep, upsertEdge, deleteEdge, lockField, unlockField }
 }
