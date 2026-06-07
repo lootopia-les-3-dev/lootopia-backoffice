@@ -1,16 +1,16 @@
+import { FileImage, X } from "lucide-react"
 import mapboxgl from "mapbox-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
-import { FileImage, X } from "lucide-react"
-import { MediaPreview } from "~/components/ui/MediaPreview"
 import { useEffect, useRef, useState } from "react"
 import { Link, useNavigate, useRevalidator, useRouteLoaderData } from "react-router"
-import { useUserLocation } from "~/hooks/useUserLocation"
 import { MediaPicker } from "~/components/media/MediaPicker"
-import Switch from "~/components/utils/Switch"
 import { Field } from "~/components/ui/Field"
 import { Label } from "~/components/ui/Label"
+import { MediaPreview } from "~/components/ui/MediaPreview"
 import { TextInput } from "~/components/ui/TextInput"
 import { Textarea } from "~/components/ui/Textarea"
+import Switch from "~/components/utils/Switch"
+import { useUserLocation } from "~/hooks/useUserLocation"
 import type { rootLoader } from "~/loaders/rootloader"
 import type { HuntLight } from "~/types/Hunt"
 
@@ -49,8 +49,8 @@ const STROKE = "#7c3aed"
 const drawZone = (map: mapboxgl.Map, v: GeoValue) => {
   const coords: [number, number][] =
     v?.type === "circle" ? circleCoords(v.center, v.radius)
-    : v?.type === "boundary" ? boundaryCoords(v.boundary)
-    : []
+      : v?.type === "boundary" ? boundaryCoords(v.boundary)
+        : []
 
   const geojson: GeoJSON.Feature = { type: "Feature", geometry: { type: "Polygon", coordinates: [coords] }, properties: {} }
   const src = map.getSource("zone") as mapboxgl.GeoJSONSource | undefined
@@ -97,12 +97,12 @@ const MapPicker = ({ geoType, value, onChange, mapboxToken }: {
 
     const initialCenter: [number, number] =
       value?.type === "circle" ? [value.center.lng, value.center.lat]
-      : value?.type === "boundary" && value.boundary.length > 0
-        ? [
+        : value?.type === "boundary" && value.boundary.length > 0
+          ? [
             value.boundary.reduce((s, p) => s + p.lng, 0) / value.boundary.length,
             value.boundary.reduce((s, p) => s + p.lat, 0) / value.boundary.length,
           ]
-        : userLoc ?? [2.3488, 48.8534]
+          : userLoc ?? [2.3488, 48.8534]
 
     const map = new mapboxgl.Map({
       container: containerRef.current,
@@ -283,8 +283,6 @@ const HuntSettings = () => {
 
   const userId = rootData?.user ? String(rootData.user.id) : undefined
   const mapboxToken = rootData?.mapboxToken ?? ""
-
-  useEffect(() => { console.log("[hunt settings]", hunt) }, [])
 
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)

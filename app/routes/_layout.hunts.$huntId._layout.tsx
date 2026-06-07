@@ -22,7 +22,6 @@ export const loader: LoaderFunction = async ({ params, request }): Promise<Loade
   })
     .then((res) => res.data.filter((hunt) => hunt.slug === huntId)[0])
     .catch((res) => {
-      console.error("Failed to fetch hunt", res)
       if (res.response?.status === 401) {
         throw redirect(`${process.env.SSO_URL}/login?callbackUrl=${encodeURIComponent(request.url)}`)
       }

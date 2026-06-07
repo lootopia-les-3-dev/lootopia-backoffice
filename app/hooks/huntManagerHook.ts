@@ -113,8 +113,6 @@ export const useHuntManagerInternal = (slug: string): HuntManagerContextType => 
   const pendingInsert = useRef<Map<string, string>>(new Map())
 
   useEffect(() => {
-    console.log("[socket] init — socketUrl:", socketUrl, "| slug:", slug, "| authToken:", authToken ? `${authToken.slice(0, 10)}…` : "NULL ⚠️")
-
     const socket = io(socketUrl, {
       path: "/ws/hunts/socket.io",
       transports: ["websocket"],
@@ -126,39 +124,20 @@ export const useHuntManagerInternal = (slug: string): HuntManagerContextType => 
     socketRef.current = socket
 
     socket.on("connect", () => {
-      console.log("[socket] ✅ connected — id:", socket.id)
       setStatus("open")
     })
-    socket.on("disconnect", (reason) => {
-      console.warn("[socket] ❌ disconnected — reason:", reason)
+    socket.on("disconnect", () => {
       setStatus("closed")
     })
-    socket.on("connect_error", (err) => {
-      console.error("[socket] ❌ connect_error — message:", err.message, "| full error:", err)
+    socket.on("connect_error", () => {
       setStatus("error")
     })
 
-    socket.io.on("reconnect_attempt", (n) => {
-      console.log(`[socket] reconnect attempt #${n}`)
-    })
-    socket.io.on("reconnect_failed", () => {
-      console.error("[socket] reconnect failed — giving up")
-    })
-
-    socket.onAny((event, ...args) => {
-      console.log("[socket] ← event:", event, args)
-    })
-    socket.onAnyOutgoing((event, ...args) => {
-      console.log("[socket] → emit:", event, args)
-    })
-
     socket.on("hunt:state", (state: HuntState) => {
-      console.log("[socket] hunt:state received — steps:", state.steps.length)
       setHuntState({ ...state, steps: state.steps.map(deserializeStep) })
     })
 
-    socket.on("hunt:error", (err: { field?: string; message: string }) => {
-      console.error("[socket] hunt:error", err)
+    socket.on("hunt:error", () => {
     })
 
     socket.on("step:created", (raw: HuntState["steps"][number]) => {
@@ -252,13 +231,7 @@ export const useHuntManagerInternal = (slug: string): HuntManagerContextType => 
   }, [socketUrl, slug, authToken])
 
   const emit = useCallback((event: string, data: unknown) => {
-    if (!socketRef.current) {
-      console.warn(`[socket] emit "${event}" — socket is null, event dropped`)
-      return
-    }
-    if (!socketRef.current.connected) {
-      console.warn(`[socket] emit "${event}" — socket not connected, event dropped`)
-    }
+    if (!socketRef.current?.connected) return
     socketRef.current.emit(event, data)
   }, [])
 
