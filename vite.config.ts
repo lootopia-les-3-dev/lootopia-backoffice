@@ -5,8 +5,15 @@ import tsconfigPaths from "vite-tsconfig-paths"
 
 export default defineConfig({
   server: {
-    port: 5173,
-    allowedHosts: [".lootopia.io"]
+    port: 3000,
+    allowedHosts: [".lootopia.io"],
+    proxy: {
+      "/sso": {
+        target: "https://sso.lootopia.io",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/sso/, "/"),
+      },
+    },
   },
   plugins: [
     tailwindcss(),
