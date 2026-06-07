@@ -9,6 +9,7 @@ export const action: ActionFunction = async ({ request }) => {
   const body = await request.json()
 
   try {
+    console.log("Creating team with body:", body, "for :", process.env.API_URL)
     const res = await axios.post(`${process.env.API_URL}teams`, body, {
       headers: {
         cookie: request.headers.get("cookie") || "",
