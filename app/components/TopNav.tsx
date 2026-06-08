@@ -3,7 +3,7 @@ import type { rootLoader } from "~/loaders/rootloader"
 
 export const TopNav = () => {
   const loaderData = useRouteLoaderData<typeof rootLoader>("root")
-  const { user, signInUrl } = loaderData ?? {}
+  const { user, signInUrl, profileUrl } = loaderData ?? {}
 
   return (
     <nav className="flex items-center justify-between text-shadow-mauve-900 dark:text-mauve-50 px-4 py-2 border-b border-mauve-400">
@@ -43,9 +43,9 @@ export const TopNav = () => {
       </div>
       <div>
         {user ? (
-          <div className="h-8 w-8 flex justify-center items-center rounded-full border-2 font-bold">
+          <Link to={profileUrl || ""} className="h-8 w-8 flex justify-center items-center rounded-full border-2 font-bold">
             {user.firstName.slice(0, 1).toLowerCase()}{user.lastName.slice(0, 1).toLowerCase()}
-          </div>
+          </Link>
         ) : (
           <a href={signInUrl ?? "#"}>sign in</a>
         )}
