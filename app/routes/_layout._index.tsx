@@ -7,6 +7,9 @@ export const loader: LoaderFunction = async (c) => {
   if (user) {
     return redirect("/hunts")
   }
+  else {
+    return redirect(process.env.SSO_URL ? `${process.env.SSO_URL}/login?callbackUrl=${encodeURIComponent(c.request.url)}` : "/hunts")
+  }
 }
 
 const Home = () => <>
