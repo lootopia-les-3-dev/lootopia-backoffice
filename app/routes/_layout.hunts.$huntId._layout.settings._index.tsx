@@ -1,8 +1,10 @@
-import { FileImage, X } from "lucide-react"
+import axios from "axios"
+import { ArrowRightLeft, FileImage, X } from "lucide-react"
 import mapboxgl from "mapbox-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
 import { useEffect, useRef, useState } from "react"
-import { Link, useNavigate, useRevalidator, useRouteLoaderData } from "react-router"
+import { Link, useLoaderData, useNavigate, useRevalidator, useRouteLoaderData, type LoaderFunction } from "react-router"
+import { redirect } from "react-router"
 import { MediaPicker } from "~/components/media/MediaPicker"
 import { Field } from "~/components/ui/Field"
 import { Label } from "~/components/ui/Label"
@@ -13,8 +15,29 @@ import Switch from "~/components/utils/Switch"
 import { useUserLocation } from "~/hooks/useUserLocation"
 import type { rootLoader } from "~/loaders/rootloader"
 import type { HuntLight } from "~/types/Hunt"
+import type { TeamLight } from "~/types/Team"
 
-type LoaderData = { hunt: HuntLight | null; slug: string }
+type SettingsLoaderData = {
+  teams: TeamLight[]
+}
+
+export const loader: LoaderFunction = async ({ request }): Promise<SettingsLoaderData> => {
+  const teams = await axios
+    .get<TeamLight[]>(`${process.env.API_URL}teams`, {
+      headers: { cookie: request.headers.get("cookie") || "" },
+    })
+    .then((res) => res.data)
+    .catch((err) => {
+      if (err?.response?.status === 401) {
+        throw redirect(`${process.env.SSO_URL}/login?callbackUrl=${encodeURIComponent(request.url)}`)
+      }
+      return []
+    })
+
+  return { teams }
+}
+
+type HuntLayoutData = { hunt: HuntLight | null; slug: string }
 
 const statusOptions = [
   { value: "draft", label: "Brouillon" },
@@ -76,7 +99,6 @@ const MapPicker = ({ geoType, value, onChange, mapboxToken }: {
   const markerRef = useRef<mapboxgl.Marker | null>(null)
   const boundaryMarkersRef = useRef<mapboxgl.Marker[]>([])
   const userMarkerRef = useRef<mapboxgl.Marker | null>(null)
-  // Always-fresh refs — no stale closure issues
   const valueRef = useRef<GeoValue>(value)
   const onChangeRef = useRef(onChange)
   useEffect(() => { valueRef.current = value }, [value])
@@ -90,7 +112,6 @@ const MapPicker = ({ geoType, value, onChange, mapboxToken }: {
     if (!containerRef.current) return
     mapboxgl.accessToken = mapboxToken
 
-    // Priority: existing zone → user location → Paris
     const userLoc = userLocationRef.current.status === "granted"
       ? [userLocationRef.current.lng, userLocationRef.current.lat] as [number, number]
       : null
@@ -201,7 +222,6 @@ const MapPicker = ({ geoType, value, onChange, mapboxToken }: {
     }
   }, [geoType, mapboxToken])
 
-  // User location marker + initial fly-to if no zone
   useEffect(() => {
     const map = mapRef.current
     if (!map || userLocation.status !== "granted") return
@@ -219,7 +239,6 @@ const MapPicker = ({ geoType, value, onChange, mapboxToken }: {
     }
   }, [userLocation])
 
-  // Redraw on radius change
   useEffect(() => {
     const map = mapRef.current
     if (!map?.isStyleLoaded()) return
@@ -273,16 +292,139 @@ const MapPicker = ({ geoType, value, onChange, mapboxToken }: {
   )
 }
 
+// ─── TransferSection ──────────────────────────────────────────────────────────
+
+const TransferSection = ({ slug, teams }: { slug: string; teams: TeamLight[] }) => {
+  const [mode, setMode] = useState<"user" | "team">("user")
+  const [targetEmail, setTargetEmail] = useState("")
+  const [targetTeamSlug, setTargetTeamSlug] = useState(teams[0]?.slug ?? "")
+  const [transferring, setTransferring] = useState(false)
+  const [confirm, setConfirm] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const navigate = useNavigate()
+
+  const handleTransfer = async () => {
+    setTransferring(true)
+    setError(null)
+    try {
+      const body = mode === "user" ? { targetEmail } : { targetTeamSlug }
+      const res = await fetch(`/api/hunts/${slug}/transfer`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        setError(data.error ?? "Erreur lors du transfert")
+        setConfirm(false)
+        return
+      }
+      navigate("/hunts")
+    } catch {
+      setError("Erreur réseau")
+      setConfirm(false)
+    } finally {
+      setTransferring(false)
+    }
+  }
+
+  const canSubmit = mode === "user" ? !!targetEmail.trim() : !!targetTeamSlug
+
+  return (
+    <div className="flex flex-col gap-4 pt-2 border-t border-mauve-300 dark:border-mauve-600">
+      <div className="flex items-center gap-2">
+        <ArrowRightLeft size={16} className="text-mauve-400" />
+        <Label>Transférer la propriété</Label>
+      </div>
+
+      <div className="flex gap-2">
+        {(["user", "team"] as const).map((m) => (
+          <button
+            key={m}
+            type="button"
+            onClick={() => { setMode(m); setConfirm(false); setError(null) }}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${mode === m ? "bg-mauve-900 dark:bg-mauve-50 text-mauve-50 dark:text-mauve-900" : "bg-mauve-100 dark:bg-mauve-700 text-mauve-500 dark:text-mauve-400 hover:bg-mauve-200 dark:hover:bg-mauve-600"}`}
+          >
+            {m === "user" ? "Utilisateur" : "Équipe"}
+          </button>
+        ))}
+      </div>
+
+      {mode === "user" ? (
+        <TextInput
+          type="email"
+          value={targetEmail}
+          onChange={(e) => { setTargetEmail(e.target.value); setConfirm(false) }}
+          placeholder="email@destinataire.com"
+          className="bg-mauve-100 dark:bg-mauve-700 border-mauve-300 dark:border-mauve-500 text-mauve-900 dark:text-mauve-50"
+        />
+      ) : (
+        <select
+          value={targetTeamSlug}
+          onChange={(e) => { setTargetTeamSlug(e.target.value); setConfirm(false) }}
+          className="bg-mauve-100 dark:bg-mauve-700 border border-mauve-300 dark:border-mauve-500 rounded-lg px-3 py-2 text-sm text-mauve-900 dark:text-mauve-50 focus:outline-none"
+        >
+          {teams.length === 0 && <option value="">Aucune équipe disponible</option>}
+          {teams.map((t) => (
+            <option key={t.slug} value={t.slug}>{t.name}</option>
+          ))}
+        </select>
+      )}
+
+      {error && <p className="text-xs text-red-500">{error}</p>}
+
+      {!confirm ? (
+        <button
+          type="button"
+          disabled={!canSubmit}
+          onClick={() => setConfirm(true)}
+          className="self-start px-4 py-2 rounded-lg text-sm bg-amber-500 text-white font-medium hover:opacity-80 disabled:opacity-40 transition-opacity"
+        >
+          Transférer
+        </button>
+      ) : (
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-amber-500">
+            {mode === "user"
+              ? `Transférer à ${targetEmail} ? Cette action est irréversible.`
+              : `Transférer à l'équipe ${targetTeamSlug} ? Cette action est irréversible.`}
+          </span>
+          <button
+            type="button"
+            onClick={() => setConfirm(false)}
+            className="text-xs text-mauve-400 hover:opacity-60 px-2 py-1"
+          >
+            Annuler
+          </button>
+          <button
+            type="button"
+            onClick={handleTransfer}
+            disabled={transferring}
+            className="text-xs text-amber-500 font-semibold hover:opacity-60 px-2 py-1 disabled:opacity-40"
+          >
+            {transferring ? "Transfert..." : "Confirmer"}
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 const HuntSettings = () => {
-  const { hunt, slug } = useRouteLoaderData<() => LoaderData>("routes/_layout.hunts.$huntId._layout")!
+  const { hunt, slug } = useRouteLoaderData<() => HuntLayoutData>("routes/_layout.hunts.$huntId._layout")!
+  const loaderData = useLoaderData<typeof loader>()
+  const teams = (loaderData as unknown as SettingsLoaderData)?.teams ?? []
   const rootData = useRouteLoaderData<typeof rootLoader>("root")
   const { revalidate } = useRevalidator()
   const navigate = useNavigate()
 
-  const userId = rootData?.user ? String(rootData.user.id) : undefined
   const mapboxToken = rootData?.mapboxToken ?? ""
+  const userId = rootData?.user ? String(rootData.user.id) : undefined
+
+  // Permissions : owner direct, ou owner/admin de la team
+  const canManage = hunt?.isOwner || hunt?.teamRole === "admin"
 
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -383,13 +525,21 @@ const HuntSettings = () => {
           <Link to=".." className="p-1 hover:opacity-60 transition-opacity"><X className="h-5 w-5" /></Link>
         </div>
 
+        {/* Readonly banner pour les collaborateurs/viewers */}
+        {!canManage && (
+          <div className="px-4 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-xs text-amber-500">
+            Lecture seule — seuls l'owner et les admins de l'équipe peuvent modifier ces paramètres.
+          </div>
+        )}
+
         {/* Cover */}
         <div className="flex flex-col gap-2">
           <Label>Cover</Label>
           <button
             type="button"
-            onClick={() => setMediaPicker(true)}
-            className="w-full h-36 rounded-xl border-2 border-dashed border-mauve-300 dark:border-mauve-600 flex flex-col items-center justify-center gap-2 hover:border-mauve-400 transition-colors overflow-hidden"
+            onClick={() => canManage && setMediaPicker(true)}
+            disabled={!canManage}
+            className="w-full h-36 rounded-xl border-2 border-dashed border-mauve-300 dark:border-mauve-600 flex flex-col items-center justify-center gap-2 hover:border-mauve-400 transition-colors overflow-hidden disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {coverKey ? (
               <MediaPreview src={`/api/files/hunt-${slug}/url?key=${encodeURIComponent(coverKey)}`} className="w-full h-full object-cover" />
@@ -400,7 +550,7 @@ const HuntSettings = () => {
               </>
             )}
           </button>
-          {coverKey && (
+          {coverKey && canManage && (
             <button type="button" onClick={() => setCoverKey(null)} className="text-xs text-mauve-400 hover:text-red-500 transition-colors text-left">
               Supprimer la cover
             </button>
@@ -409,14 +559,24 @@ const HuntSettings = () => {
 
         {/* Name */}
         <Field label="Nom">
-          <TextInput value={name} onChange={(e) => setName(e.target.value)} placeholder="Nom de la hunt"
-            className="bg-mauve-100 dark:bg-mauve-700 border-mauve-300 dark:border-mauve-500 text-mauve-900 dark:text-mauve-50" />
+          <TextInput
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Nom de la hunt"
+            disabled={!canManage}
+            className="bg-mauve-100 dark:bg-mauve-700 border-mauve-300 dark:border-mauve-500 text-mauve-900 dark:text-mauve-50 disabled:opacity-60"
+          />
         </Field>
 
         {/* Description */}
         <Field label="Description">
-          <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Description de la hunt..."
-            className="min-h-20 bg-mauve-100 dark:bg-mauve-700 border-mauve-300 dark:border-mauve-500 text-mauve-900 dark:text-mauve-50" />
+          <Textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Description de la hunt..."
+            disabled={!canManage}
+            className="min-h-20 bg-mauve-100 dark:bg-mauve-700 border-mauve-300 dark:border-mauve-500 text-mauve-900 dark:text-mauve-50 disabled:opacity-60"
+          />
         </Field>
 
         {/* Status */}
@@ -424,8 +584,13 @@ const HuntSettings = () => {
           <Label>Statut</Label>
           <div className="flex gap-2">
             {statusOptions.map((opt) => (
-              <button key={opt.value} type="button" onClick={() => setStatus(opt.value)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${status === opt.value ? "bg-mauve-900 dark:bg-mauve-50 text-mauve-50 dark:text-mauve-900" : "bg-mauve-100 dark:bg-mauve-700 text-mauve-500 dark:text-mauve-400 hover:bg-mauve-200 dark:hover:bg-mauve-600"}`}>
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => canManage && setStatus(opt.value)}
+                disabled={!canManage}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:cursor-not-allowed ${status === opt.value ? "bg-mauve-900 dark:bg-mauve-50 text-mauve-50 dark:text-mauve-900" : "bg-mauve-100 dark:bg-mauve-700 text-mauve-500 dark:text-mauve-400 hover:bg-mauve-200 dark:hover:bg-mauve-600 disabled:opacity-60"}`}
+              >
                 {opt.label}
               </button>
             ))}
@@ -434,56 +599,84 @@ const HuntSettings = () => {
 
         {/* Passcode */}
         <Field label="Code d'accès (optionnel)">
-          <TextInput value={passcode} onChange={(e) => setPasscode(e.target.value)} placeholder="Laisser vide pour accès libre"
-            className="bg-mauve-100 dark:bg-mauve-700 border-mauve-300 dark:border-mauve-500 text-mauve-900 dark:text-mauve-50" />
+          <TextInput
+            value={passcode}
+            onChange={(e) => setPasscode(e.target.value)}
+            placeholder="Laisser vide pour accès libre"
+            disabled={!canManage}
+            className="bg-mauve-100 dark:bg-mauve-700 border-mauve-300 dark:border-mauve-500 text-mauve-900 dark:text-mauve-50 disabled:opacity-60"
+          />
         </Field>
 
         {/* Geo restriction */}
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <Label>Restriction géographique</Label>
-            <Switch enabled={geoEnabled} onChange={(v) => { setGeoEnabled(v); if (!v) setGeoValue(null) }} />
+            <Switch
+              enabled={geoEnabled}
+              onChange={(v) => { if (canManage) { setGeoEnabled(v); if (!v) setGeoValue(null) } }}
+              disabled={!canManage}
+            />
           </div>
 
           {geoEnabled && (
             <>
               <div className="flex gap-2">
                 {(["circle", "boundary"] as const).map((t) => (
-                  <button key={t} type="button" onClick={() => { setGeoType(t); setGeoValue(null) }}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${geoType === t ? "bg-purple-600 text-white" : "bg-mauve-100 dark:bg-mauve-700 text-mauve-500 dark:text-mauve-400 hover:bg-mauve-200 dark:hover:bg-mauve-600"}`}>
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => { if (canManage) { setGeoType(t); setGeoValue(null) } }}
+                    disabled={!canManage}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors disabled:cursor-not-allowed ${geoType === t ? "bg-purple-600 text-white" : "bg-mauve-100 dark:bg-mauve-700 text-mauve-500 dark:text-mauve-400 hover:bg-mauve-200 dark:hover:bg-mauve-600 disabled:opacity-60"}`}
+                  >
                     {t === "circle" ? "Cercle" : "Zone libre"}
                   </button>
                 ))}
               </div>
-              <MapPicker key={geoType} geoType={geoType} value={geoValue} onChange={setGeoValue} mapboxToken={mapboxToken} />
+              <MapPicker key={geoType} geoType={geoType} value={geoValue} onChange={canManage ? setGeoValue : () => {}} mapboxToken={mapboxToken} />
             </>
           )}
         </div>
 
         {error && <p className="text-sm text-red-500 dark:text-red-400">{error}</p>}
 
-        <div className="flex items-center justify-between pt-2 pb-4">
-          {confirmDelete ? (
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-red-400">Supprimer définitivement ?</span>
-              <button type="button" onClick={() => setConfirmDelete(false)} className="text-xs text-mauve-400 hover:opacity-60 px-2 py-1">
-                Annuler
+        {/* Actions : Save + Delete */}
+        {canManage && (
+          <div className="flex items-center justify-between pt-2">
+            {confirmDelete ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-red-400">Supprimer définitivement ?</span>
+                <button type="button" onClick={() => setConfirmDelete(false)} className="text-xs text-mauve-400 hover:opacity-60 px-2 py-1">
+                  Annuler
+                </button>
+                <button type="button" onClick={handleDelete} disabled={deleting} className="text-xs text-red-400 font-semibold hover:opacity-60 px-2 py-1 disabled:opacity-40">
+                  {deleting ? "Suppression..." : "Confirmer"}
+                </button>
+              </div>
+            ) : (
+              <button type="button" onClick={() => setConfirmDelete(true)} className="text-xs text-mauve-400 hover:text-red-500 transition-colors">
+                Supprimer la hunt
               </button>
-              <button type="button" onClick={handleDelete} disabled={deleting} className="text-xs text-red-400 font-semibold hover:opacity-60 px-2 py-1 disabled:opacity-40">
-                {deleting ? "Suppression..." : "Confirmer"}
-              </button>
-            </div>
-          ) : (
-            <button type="button" onClick={() => setConfirmDelete(true)} className="text-xs text-mauve-400 hover:text-red-500 transition-colors">
-              Supprimer la hunt
-            </button>
-          )}
+            )}
 
-          <button type="button" onClick={handleSave} disabled={saving || !name.trim()}
-            className="px-6 py-2 rounded-lg text-sm bg-mauve-900 dark:bg-mauve-50 text-mauve-50 dark:text-mauve-900 font-medium hover:opacity-80 disabled:opacity-40 transition-opacity">
-            {saving ? "Sauvegarde..." : saved ? "Sauvegardé ✓" : "Sauvegarder"}
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving || !name.trim()}
+              className="px-6 py-2 rounded-lg text-sm bg-mauve-900 dark:bg-mauve-50 text-mauve-50 dark:text-mauve-900 font-medium hover:opacity-80 disabled:opacity-40 transition-opacity"
+            >
+              {saving ? "Sauvegarde..." : saved ? "Sauvegardé ✓" : "Sauvegarder"}
+            </button>
+          </div>
+        )}
+
+        {/* Transfer — owner direct uniquement */}
+        {hunt?.isOwner && (
+          <div className="pb-4">
+            <TransferSection slug={slug} teams={teams} />
+          </div>
+        )}
       </div>
 
       <MediaPicker open={mediaPicker} onClose={() => setMediaPicker(false)} onSelect={(key) => setCoverKey(key)} scopes={mediaScopes} defaultTab="hunt" />

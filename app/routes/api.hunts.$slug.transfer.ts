@@ -1,7 +1,9 @@
 import axios from "axios"
 import type { ActionFunction } from "react-router"
 
-export const action: ActionFunction = async ({ request }) => {
+export const action: ActionFunction = async ({ request, params }) => {
+  const { slug } = params
+
   if (request.method !== "POST") {
     return Response.json({ error: "Method not allowed" }, { status: 405 })
   }
@@ -9,8 +11,7 @@ export const action: ActionFunction = async ({ request }) => {
   const body = await request.json()
 
   try {
-    console.log("Creating team with body:", body, "for :", process.env.API_URL)
-    const res = await axios.post(`${process.env.API_URL}teams`, body, {
+    const res = await axios.post(`${process.env.API_URL}hunts/${slug}/transfer`, body, {
       headers: {
         cookie: request.headers.get("cookie") || "",
         "Content-Type": "application/json",
