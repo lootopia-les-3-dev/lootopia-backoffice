@@ -12,6 +12,10 @@ const listScoops = async (): Promise<Scoop[]> => {
   // Cache for 60s to avoid hammering the filemanager on every image render
   if (cache && Date.now() - cacheAt < 60_000) return cache
   const res = await fetch(`${fileManagerUrl()}/scoops`, { headers: headers() })
+  if (!res.ok) {
+    const body = await res.text()
+    throw new Error(`listScoops failed (${res.status}): ${body.slice(0, 200)}`)
+  }
   cache = await res.json()
   cacheAt = Date.now()
   return cache!
@@ -34,6 +38,10 @@ export const resolveScoop = async (nameOrSlug: string): Promise<Scoop> => {
     headers: headers(),
     body: JSON.stringify({ name: nameOrSlug }),
   })
+  if (!createRes.ok) {
+    const body = await createRes.text()
+    throw new Error(`createScoop failed (${createRes.status}): ${body.slice(0, 200)}`)
+  }
   const created: Scoop = await createRes.json()
   cache = null // invalidate cache
   return created
