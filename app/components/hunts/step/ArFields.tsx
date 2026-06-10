@@ -10,6 +10,7 @@ import Switch from "~/components/utils/Switch"
 import type { useHuntManager } from "~/hooks/huntManagerHook"
 import { useUserLocation } from "~/hooks/useUserLocation"
 import { type rootLoader } from "~/loaders/rootloader"
+import { mapboxLightPreset, mapboxStyle } from "~/utils/mapboxStyle"
 import type { GeoCoordinate, GeoType, HuntStep, StepGame } from "~/types/Hunt"
 
 type Props = {
@@ -124,84 +125,85 @@ export const ArFields = ({ step, stepId, updateStep }: Props) => {
       </div>
 
       {geoEnabled && (
-      <>
-      <Field label="Type de zone AR">
-        <Select
-          value={arGeoType}
-          onChange={(e) => updateStep({ stepId, arGeoType: e.target.value as GeoType })}
-        >
-          <option value="point">point (coordonnée + rayon)</option>
-          <option value="boundary">boundary (polygone)</option>
-        </Select>
-      </Field>
+        <>
+          <Field label="Type de zone AR">
+            <Select
+              value={arGeoType}
+              onChange={(e) => updateStep({ stepId, arGeoType: e.target.value as GeoType })}
+            >
+              <option value="point">point (coordonnée + rayon)</option>
+              <option value="boundary">boundary (polygone)</option>
+            </Select>
+          </Field>
 
-      <div className="flex flex-col gap-1">
-        <Label>
-          Carte — {arGeoType === "point" ? "clic pour placer le point" : "clics pour tracer le polygone"}
-        </Label>
-        <div className="rounded-lg overflow-hidden" style={{ height: 300 }}>
-          <Map
-            mapboxAccessToken={mapboxToken}
-            initialViewState={{ longitude: center.lng, latitude: center.lat, zoom: 12 }}
-            style={{ width: "100%", height: "100%" }}
-            mapStyle="mapbox://styles/mapbox/dark-v11"
-            onClick={handleMapClick}
-          >
-            {arGeoType === "point" && validPoint && (
-              <>
-                <Marker longitude={validPoint.lng} latitude={validPoint.lat} />
-                <Source id="ar-radius" type="geojson" data={makeCircleGeoJson(validPoint, radius)}>
-                  <Layer id="ar-radius-fill" type="fill" paint={{ "fill-color": "#f59e0b", "fill-opacity": 0.15 }} />
-                  <Layer id="ar-radius-outline" type="line" paint={{ "line-color": "#f59e0b", "line-width": 1.5 }} />
-                </Source>
-              </>
-            )}
-
-            {userLocation.status === "granted" && (
-              <Marker longitude={userLocation.lng} latitude={userLocation.lat}>
-                <div className="w-4 h-4 rounded-full bg-blue-500 border-2 border-white shadow-lg" />
-              </Marker>
-            )}
-
-            {arGeoType === "boundary" && (
-              <>
-                {validBoundary.map((c, i) => (
-                  <Marker
-                    key={i}
-                    longitude={c.lng}
-                    latitude={c.lat}
-                    onClick={(e) => { e.originalEvent.stopPropagation(); removePoint(i) }}
-                    style={{ cursor: "pointer" }}
-                  />
-                ))}
-                {boundaryGeoJson && (
-                  <Source id="ar-boundary" type="geojson" data={boundaryGeoJson}>
-                    <Layer id="ar-boundary-fill" type="fill" paint={{ "fill-color": "#f59e0b", "fill-opacity": 0.15 }} />
-                    <Layer id="ar-boundary-outline" type="line" paint={{ "line-color": "#f59e0b", "line-width": 1.5, "line-dasharray": [2, 1] }} />
-                  </Source>
+          <div className="flex flex-col gap-1">
+            <Label>
+              Carte — {arGeoType === "point" ? "clic pour placer le point" : "clics pour tracer le polygone"}
+            </Label>
+            <div className="rounded-lg overflow-hidden" style={{ height: 300 }}>
+              <Map
+                mapboxAccessToken={mapboxToken}
+                initialViewState={{ longitude: center.lng, latitude: center.lat, zoom: 12 }}
+                style={{ width: "100%", height: "100%" }}
+                mapStyle={mapboxStyle}
+                onLoad={(e) => e.target.setConfigProperty("basemap", "lightPreset", mapboxLightPreset)}
+                onClick={handleMapClick}
+              >
+                {arGeoType === "point" && validPoint && (
+                  <>
+                    <Marker longitude={validPoint.lng} latitude={validPoint.lat} />
+                    <Source id="ar-radius" type="geojson" data={makeCircleGeoJson(validPoint, radius)}>
+                      <Layer id="ar-radius-fill" type="fill" paint={{ "fill-color": "#f59e0b", "fill-opacity": 0.15 }} />
+                      <Layer id="ar-radius-outline" type="line" paint={{ "line-color": "#f59e0b", "line-width": 1.5 }} />
+                    </Source>
+                  </>
                 )}
-              </>
-            )}
-          </Map>
-        </div>
-        {arGeoType === "boundary" && boundary.length > 0 && (
-          <button className="text-xs text-red-400 hover:opacity-60 self-end" onClick={clearBoundary}>
-            Effacer le polygone
-          </button>
-        )}
-      </div>
 
-      {arGeoType === "point" && (
-        <Field label="Rayon (mètres)">
-          <Stepper
-            value={radius}
-            min={5}
-            step={10}
-            onChange={(next) => { setRadius(next); updateStep({ stepId, arRadius: next }) }}
-          />
-        </Field>
-      )}
-      </>
+                {userLocation.status === "granted" && (
+                  <Marker longitude={userLocation.lng} latitude={userLocation.lat}>
+                    <div className="w-4 h-4 rounded-full bg-blue-500 border-2 border-white shadow-lg" />
+                  </Marker>
+                )}
+
+                {arGeoType === "boundary" && (
+                  <>
+                    {validBoundary.map((c, i) => (
+                      <Marker
+                        key={i}
+                        longitude={c.lng}
+                        latitude={c.lat}
+                        onClick={(e) => { e.originalEvent.stopPropagation(); removePoint(i) }}
+                        style={{ cursor: "pointer" }}
+                      />
+                    ))}
+                    {boundaryGeoJson && (
+                      <Source id="ar-boundary" type="geojson" data={boundaryGeoJson}>
+                        <Layer id="ar-boundary-fill" type="fill" paint={{ "fill-color": "#f59e0b", "fill-opacity": 0.15 }} />
+                        <Layer id="ar-boundary-outline" type="line" paint={{ "line-color": "#f59e0b", "line-width": 1.5, "line-dasharray": [2, 1] }} />
+                      </Source>
+                    )}
+                  </>
+                )}
+              </Map>
+            </div>
+            {arGeoType === "boundary" && boundary.length > 0 && (
+              <button className="text-xs text-red-400 hover:opacity-60 self-end" onClick={clearBoundary}>
+                Effacer le polygone
+              </button>
+            )}
+          </div>
+
+          {arGeoType === "point" && (
+            <Field label="Rayon (mètres)">
+              <Stepper
+                value={radius}
+                min={5}
+                step={10}
+                onChange={(next) => { setRadius(next); updateStep({ stepId, arRadius: next }) }}
+              />
+            </Field>
+          )}
+        </>
       )}
     </>
   )

@@ -45,7 +45,7 @@ const HuntLayout = () => {
   const nodeCount = huntState?.steps.length ?? 0
 
   return (
-    <main className="max-h-[calc(100vh-53px)] w-full flex flex-col bg-mauve-400 dark:bg-mauve-600">
+    <main className="h-[calc(100vh-53px)] w-full flex flex-col bg-mauve-400 dark:bg-mauve-600">
       <HuntTopBar hunt={hunt} connection={status} nodeCount={nodeCount} maxNodes={maxNodes} />
       <div className="flex min-h-0 flex-1 p-4 gap-2 pt-0 pl-2">
         <SideBar />
