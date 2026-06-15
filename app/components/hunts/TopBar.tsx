@@ -49,7 +49,7 @@ export const HuntTopBar = ({ connection, hunt, nodeCount, maxNodes }: Props) => 
               href={shopUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs text-mauve-400 hover:text-mauve-200 transition-colors"
+              className="text-xs dark:text-mauve-400 text-mauve-50 hover:text-mauve-200 transition-colors"
             >
               Ajouter des nodes
             </a>
