@@ -1,5 +1,5 @@
 import axios from "axios"
-import { Outlet, redirect, useLoaderData, useRouteLoaderData, type LoaderFunction } from "react-router"
+import { redirect, useLoaderData, type LoaderFunction } from "react-router"
 import { HuntCanvasGaph } from "~/components/hunts/graph/HuntCanvasGaph"
 import { SideBar } from "~/components/hunts/SideBar"
 import { HuntTopBar } from "~/components/hunts/TopBar"
@@ -20,7 +20,7 @@ export const loader: LoaderFunction = async ({ params, request }): Promise<Loade
       cookie: request.headers.get("cookie") || "",
     },
   })
-    .then((res) => res.data.filter((hunt) => hunt.slug === huntId)[0])
+    .then((res) => res.data.filter((h) => h.slug === huntId)[0])
     .catch((res) => {
       if (res.response?.status === 401) {
         throw redirect(`${process.env.SSO_URL}/login?callbackUrl=${encodeURIComponent(request.url)}`)
@@ -28,18 +28,15 @@ export const loader: LoaderFunction = async ({ params, request }): Promise<Loade
       return null
     })
 
-  return {
-    hunt,
-    slug: huntId || "",
-  }
+  return { hunt, slug: huntId || "" }
 }
-
 
 const DEFAULT_MAX_STEPS = 20
 
-const HuntLayout = () => {
+
+const HuntContent = () => {
   const { status, huntState } = useHuntManager()
-  const { hunt } = useRouteLoaderData<() => LoaderData>("routes/_layout.hunts.$huntId._layout") ?? { hunt: null }
+  const { hunt } = useLoaderData<LoaderData>()
 
   const maxNodes = hunt?.maxNodes ?? DEFAULT_MAX_STEPS
   const nodeCount = huntState?.steps.length ?? 0
@@ -49,11 +46,8 @@ const HuntLayout = () => {
       <HuntTopBar hunt={hunt} connection={status} nodeCount={nodeCount} maxNodes={maxNodes} />
       <div className="flex flex-1 p-4 gap-2 pt-0 pl-2">
         <SideBar />
-        <section className="h-full w-full hidden md:block bg-mauve-200 dark:bg-mauve-900 rounded-xl">
+        <section className="h-full w-full bg-mauve-200 dark:bg-mauve-900 rounded-xl">
           <HuntCanvasGaph maxNodes={maxNodes} />
-        </section>
-        <section className="h-full w-full bg-mauve-200 dark:bg-mauve-900 rounded-xl p-8 overflow-hidden">
-          <Outlet />
         </section>
       </div>
     </main>
@@ -61,11 +55,11 @@ const HuntLayout = () => {
 }
 
 const Hunt = () => {
-  const { slug } = useLoaderData<() => LoaderData>()
+  const { slug } = useLoaderData<LoaderData>()
 
   return (
-    <HuntManagerProvider slug={slug ?? ""}>
-      <HuntLayout />
+    <HuntManagerProvider slug={slug}>
+      <HuntContent />
     </HuntManagerProvider>
   )
 }
