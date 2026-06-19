@@ -9,6 +9,7 @@ import { Stepper } from "~/components/ui/Stepper"
 import type { useHuntManager } from "~/hooks/huntManagerHook"
 import { useUserLocation } from "~/hooks/useUserLocation"
 import { type rootLoader } from "~/loaders/rootloader"
+import { mapboxLightPreset, mapboxStyle } from "~/utils/mapboxStyle"
 import type { GeoCoordinate, GeoType, HuntStep } from "~/types/Hunt"
 
 type Props = {
@@ -115,7 +116,8 @@ export const GeoFields = ({ step, stepId, updateStep }: Props) => {
             mapboxAccessToken={mapboxToken}
             initialViewState={{ longitude: center.lng, latitude: center.lat, zoom: 12 }}
             style={{ width: "100%", height: "100%" }}
-            mapStyle="mapbox://styles/mapbox/dark-v11"
+            mapStyle={mapboxStyle}
+            onLoad={(e) => e.target.setConfigProperty("basemap", "lightPreset", mapboxLightPreset)}
             onClick={handleMapClick}
           >
             {geoType === "point" && validPoint && (
