@@ -1,5 +1,5 @@
 import axios from "axios"
-import { Outlet, redirect, useLoaderData, useRouteLoaderData, type LoaderFunction } from "react-router"
+import { redirect, useLoaderData, useOutlet, useRouteLoaderData, type LoaderFunction } from "react-router"
 import { HuntCanvasGaph } from "~/components/hunts/graph/HuntCanvasGaph"
 import { SideBar } from "~/components/hunts/SideBar"
 import { HuntTopBar } from "~/components/hunts/TopBar"
@@ -44,6 +44,8 @@ const HuntLayout = () => {
   const maxNodes = hunt?.maxNodes ?? DEFAULT_MAX_STEPS
   const nodeCount = huntState?.steps.length ?? 0
 
+  const outlet = useOutlet()
+
   return (
     <main className="h-[calc(100vh-53px)] w-full flex flex-col bg-mauve-400 dark:bg-mauve-600">
       <HuntTopBar hunt={hunt} connection={status} nodeCount={nodeCount} maxNodes={maxNodes} />
@@ -52,9 +54,11 @@ const HuntLayout = () => {
         <section className="min-h-0 w-full hidden md:flex bg-mauve-200 dark:bg-mauve-900 rounded-xl">
           <HuntCanvasGaph maxNodes={maxNodes} />
         </section>
-        <section className="min-h-0 w-full flex flex-col bg-mauve-200 dark:bg-mauve-900 rounded-xl p-8 overflow-y-auto">
-          <Outlet />
-        </section>
+        {outlet &&
+          <section className="min-h-0 w-full flex flex-col bg-mauve-200 dark:bg-mauve-900 rounded-xl p-8 overflow-y-auto">
+            {outlet}
+          </section>
+        }
       </div>
     </main>
   )
