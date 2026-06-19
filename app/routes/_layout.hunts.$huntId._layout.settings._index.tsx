@@ -3,8 +3,7 @@ import { ArrowRightLeft, FileImage, X } from "lucide-react"
 import mapboxgl from "mapbox-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
 import { useEffect, useRef, useState } from "react"
-import { Link, useLoaderData, useNavigate, useRevalidator, useRouteLoaderData, type LoaderFunction } from "react-router"
-import { redirect } from "react-router"
+import { Link, redirect, useLoaderData, useNavigate, useRevalidator, useRouteLoaderData, type LoaderFunction } from "react-router"
 import { MediaPicker } from "~/components/media/MediaPicker"
 import { Field } from "~/components/ui/Field"
 import { Label } from "~/components/ui/Label"
@@ -13,6 +12,7 @@ import { TextInput } from "~/components/ui/TextInput"
 import { Textarea } from "~/components/ui/Textarea"
 import Switch from "~/components/utils/Switch"
 import { useUserLocation } from "~/hooks/useUserLocation"
+import { mapboxLightPreset, mapboxStyle } from "~/utils/mapboxStyle"
 import type { rootLoader } from "~/loaders/rootloader"
 import type { HuntLight } from "~/types/Hunt"
 import type { TeamLight } from "~/types/Team"
@@ -127,7 +127,7 @@ const MapPicker = ({ geoType, value, onChange, mapboxToken }: {
 
     const map = new mapboxgl.Map({
       container: containerRef.current,
-      style: "mapbox://styles/mapbox/dark-v11",
+      style: mapboxStyle,
       center: initialCenter,
       zoom: value ? 11 : userLoc ? 13 : 10,
     })
@@ -135,6 +135,7 @@ const MapPicker = ({ geoType, value, onChange, mapboxToken }: {
     map.addControl(new mapboxgl.NavigationControl(), "top-right")
 
     map.on("load", () => {
+      map.setConfigProperty("basemap", "lightPreset", mapboxLightPreset)
       if (valueRef.current) drawZone(map, valueRef.current)
 
       if (geoType === "circle") {
@@ -634,7 +635,7 @@ const HuntSettings = () => {
                   </button>
                 ))}
               </div>
-              <MapPicker key={geoType} geoType={geoType} value={geoValue} onChange={canManage ? setGeoValue : () => {}} mapboxToken={mapboxToken} />
+              <MapPicker key={geoType} geoType={geoType} value={geoValue} onChange={canManage ? setGeoValue : () => { }} mapboxToken={mapboxToken} />
             </>
           )}
         </div>
